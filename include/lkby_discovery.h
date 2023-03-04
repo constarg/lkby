@@ -6,7 +6,7 @@
  * This function is responsible to do the job of the
  * thread that searches for new keyboards.
  */
-extern void *start_discovery(void *sched_queue);
+extern void *lkby_start_discovery(void *sched_queue);
 
 
 #endif

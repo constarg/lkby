@@ -38,7 +38,7 @@ struct lkbyqueue
  * in order to synchronize the threads
  * whitch is using queues.
  */
-struct sync_queue 
+struct lkbyqueue_sync 
 {
     struct lkbyqueue s_queue; // The queue that need synchronization.
     sem_t s_sem;              // The semaphore that synchronize the queue.
@@ -49,10 +49,10 @@ static inline void lkbyqueue_init(struct lkbyqueue *queue)
     memset(queue, 0x0, sizeof(struct lkbyqueue));
 }
 
-static inline void lkbyqueue_sync_init(struct sync_queue *s_queue)
+static inline int lkbyqueue_sync_init(struct lkbyqueue_sync *s_queue)
 {
     lkbyqueue_init(&LKBYQUEUE(s_queue));
-    sem_init(&LKBYQUEUE_SEM(s_queue), 0, 0);
+    return sem_init(&LKBYQUEUE_SEM(s_queue), 0, 0);
 }
 
 /**
@@ -92,6 +92,7 @@ static inline void lkbyqueue_enqueue(struct lkbyqueue *queue, const union lkby_i
     new_node->next = NULL;
     // new node data.
     memcpy(&new_node->data, src, sizeof(union lkby_info));
+
     // set the new node at the end of the queue.
     if (NULL == queue->front) {
         queue->front = new_node;
