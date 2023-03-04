@@ -5,5 +5,5 @@
 
 void *lkby_start_transmitter(void *keys)
 {
-    
+    return NULL;
 }
