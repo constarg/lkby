@@ -9,9 +9,9 @@
  * This function starts the thread that is responsible
  * to schedule every available keyboard.
  *
- * @param kbs The queue that contains all the available keyboards.
+ * @param sched_queue The queue that contains all the available keyboards.
  */
-extern void *lkby_start_scheduler(void *kbs);
+extern void *lkby_start_scheduler(void *sched_queue);
 
 
 

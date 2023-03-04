@@ -3,7 +3,7 @@
 
 
 
-void *lkby_start_transmitter(void *keys)
+void *lkby_start_transmitter(void *key_queue)
 {
     return NULL;
 }

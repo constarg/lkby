@@ -6,6 +6,20 @@
 
 #include "lkby.h"
 
+/**
+ * This macro retrieves the queue from
+ * the synchronization struct.
+ */
+#define LKBYQUEUE(sync) \
+    (sync)->s_queue
+
+/**
+ * This macro retrieves the semaphore 
+ * used to synchronize the two threads
+ * for a specific queue.
+ */
+#define LKBYQUEUE_SEM(sync) \
+    (sync)->s_sem
 
 struct lkbyqueue_node 
 {
@@ -15,13 +29,30 @@ struct lkbyqueue_node
 
 struct lkbyqueue 
 {
-    lkbyqueue_node *front;
-    lkbyqueue_node *rear;
+    struct lkbyqueue_node *front;
+    struct lkbyqueue_node *rear;
+};
+
+/**
+ * This structure contains informations
+ * in order to synchronize the threads
+ * whitch is using queues.
+ */
+struct sync_queue 
+{
+    struct lkbyqueue s_queue; // The queue that need synchronization.
+    sem_t s_sem;              // The semaphore that synchronize the queue.
 };
 
 static inline void lkbyqueue_init(struct lkbyqueue *queue) 
 {
     memset(queue, 0x0, sizeof(struct lkbyqueue));
+}
+
+static inline void lkbyqueue_sync_init(struct sync_queue *s_queue)
+{
+    lkbyqueue_init(&LKBYQUEUE(s_queue));
+    sem_init(&LKBYQUEUE_SEM(s_queue), 0, 0);
 }
 
 /**
