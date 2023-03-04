@@ -15,10 +15,8 @@
 #define KEYBOARD_ID2 "120013" // normal keyboard
 #define KEYBOARD_ID3 "12001b" // bluetooth keyboard
 
-#define IS_KEYBOARD(id)              \
-    ((!strcmp(id, KEYBOARD_ID1) ||   \
-     !strcmp(id, KEYBOARD_ID2)) ||   \ 
-     !strcmp(id, KEYBOARD_ID3))
+#define IS_KEYBOARD(dev_id) \
+    ((!strcmp(dev_id, KEYBOARD_ID1) || !strcmp(dev_id, KEYBOARD_ID2)) ||  !strcmp(dev_id, KEYBOARD_ID3))
 
 
 static char *read_device(FILE *devices) 
@@ -122,8 +120,7 @@ static char *retrieve_keyboard_name(const char *device)
  * discovered keyboard into the queue of the scheduler
  * thread.
  */
-static inline void store_kb_to_sched_queue(const char *kb_event, const char *kb_name,
-                                           struct lkbyqueue_sync *sched_queue)
+static inline void store_kb_to_sched_queue(const char *kb_event, const char *kb_name) 
 {
     // build the data.
     union lkby_info kb_sched_info;
@@ -132,12 +129,12 @@ static inline void store_kb_to_sched_queue(const char *kb_event, const char *kb_
     LKBY_INFO_KEYBOARD_EVENT(&kb_sched_info)               = (char *) kb_event; 
 
     // add the new schedule info into the queue.
-    lkbyqueue_enqueue(&LKBYQUEUE(sched_queue), &kb_sched_info);
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_sched_queue), &kb_sched_info);
     // inform the scheduler thread that there is a new keyboard.
     // TODO - semaphores.
 }
 
-static void read_keyboards(FILE *devices, struct lkbyqueue_sync *sched_queue)
+static void read_keyboards(FILE *devices)
 {
     char *dev      = NULL;
     char *kb_event = NULL;
@@ -150,8 +147,7 @@ static void read_keyboards(FILE *devices, struct lkbyqueue_sync *sched_queue)
                 continue;
             }
             store_kb_to_sched_queue((const char *) kb_event, 
-                                    (const char *) kb_name, 
-                                    sched_queue);
+                                    (const char *) kb_name);
 
             free(kb_event); // TODO - remove this - for test only
             free(kb_name); // TODO - remove this - for test only
@@ -160,9 +156,8 @@ static void read_keyboards(FILE *devices, struct lkbyqueue_sync *sched_queue)
     }
 }
 
-void *lkby_start_discovery(void *sched_queue)
+void *lkby_start_discovery(void *none)
 {
-    struct lkbyqueue_sync *s_queue = (struct lkbyqueue_sync *) sched_queue;
     FILE *devices; // pointer to the device file. 
 
     // start the keyboard identification process
@@ -172,7 +167,7 @@ void *lkby_start_discovery(void *sched_queue)
             sleep(RETRY);
             //continue;
         }
-        read_keyboards(devices, s_queue);
+        read_keyboards(devices);
         fclose(devices);
         //sleep(REDISCOVER);
     //}
