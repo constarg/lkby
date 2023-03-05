@@ -141,8 +141,7 @@ static void read_keyboards(FILE *devices)
     char *kb_name  = NULL;
     while ((dev = read_device(devices)) != NULL) {
         if ((kb_event = identified_keyboard(dev)) != NULL) {
-            kb_name = retrieve_keyboard_name(dev);
-            if (kb_name == NULL) {
+            if (NULL == (kb_name = retrieve_keyboard_name(dev))) {
                 free(kb_event);
                 continue;
             }
