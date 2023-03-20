@@ -23,12 +23,40 @@ struct active_kb
 // This array has the names of all the active keyboards.
 // If a keyboard stops from being active, then it's name will be removed
 // instantly from this array.
-static struct active_kb *g_active_kbs = NULL; // The active keyboards.
-static size_t g_s_active_kbs          = 10; // The initialize keyboard number.
-static lkby_index g_active_next       = 0;
+static struct active_kb **g_active_kbs = NULL; // The active keyboards.
+static size_t g_s_active_kbs           = 10; // The initialize keyboard number.
+static lkby_index g_active_next        = 0;
 
-// TODO - make a function to make a new active keyboard.
-// TODO - make a funciton to delete an active keyboard.
+
+/**
+ * This function initializes the list of active keyboards.
+ */
+static int init_active_kbs(void) 
+{
+
+}
+
+/**
+ * This function adds a new keyboard to the list
+ * of active keyboards.
+ *
+ * @param src The keyboard to be added.
+ **/
+static int add_active_kb(const struct active_kb *src)
+{
+
+}
+
+/**
+ * This function removes a keyboard that is no longer
+ * active from the keyboard active list.
+ * 
+ * @param src The keyboard to remove.
+ **/
+static int remove_active_kb(const struct active_kb *src)
+{
+
+}
 
 /**
  * This function shedule's a new discovered keyboard. It's 
@@ -37,7 +65,7 @@ static lkby_index g_active_next       = 0;
  */
 static void schedule_kb(const union lkby_info *src)
 {
-    // 
+
 }
 
 void *lkby_start_scheduler(void *sched_queue)
