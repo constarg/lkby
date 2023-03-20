@@ -1,4 +1,4 @@
-# Prerequisites
+ Prerequisites
 *.d
 
 # Object files
@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 
 ./build/
+
+bin/

@@ -129,9 +129,9 @@ static inline void store_kb_to_sched_queue(const char *kb_event, const char *kb_
     LKBY_INFO_KEYBOARD_EVENT(&kb_sched_info)               = (char *) kb_event; 
 
     // add the new schedule info into the queue.
-    lkbyqueue_enqueue(&LKBYQUEUE(&g_sched_queue), &kb_sched_info);
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &kb_sched_info);
     // inform the scheduler thread that there is a new keyboard.
-    // TODO - semaphores.
+    sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
 }
 
 static void read_keyboards(FILE *devices)
