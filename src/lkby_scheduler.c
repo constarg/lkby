@@ -4,9 +4,10 @@
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
 #include "lkby_queue.h"
+#include "lkby_transmitter.h"
 
-#define LKBYACTIVE_KB_NAME(act) \
-    (act)->kb_name
+#define LKBYACTIVE_KB(act) \
+    (act)->kb
 
 #define LKBYACTIVE_KB_THREAD(act) \
     (act)->kb_thread
@@ -15,7 +16,7 @@ typedef int lkby_index; // The last index in which the last keyboard was inserte
 
 struct active_kb 
 {
-    char *kb_name;     // The name of the keyboard.
+    union lkby_info kb;  // The keyboard
     pthread_t kb_thread; // The associated thread of the keyboard.
 };
 
@@ -33,7 +34,7 @@ static lkby_index g_active_next        = 0;
  */
 static inline int init_active_kbs(void) 
 {
-    g_active_kbs = (char **) malloc(sizeof(struct active_kb *) * g_s_active_kbs);
+    g_active_kbs = (struct active_kb **) malloc(sizeof(struct active_kb *) * g_s_active_kbs);
     if (NULL == g_active_kbs) {
         return -1;
     }
@@ -49,7 +50,7 @@ static inline int init_active_kbs(void)
  **/
 static inline void add_active_kb(const struct active_kb *src)
 {
-    g_active_kbs[g_active_next++] = src;
+    g_active_kbs[g_active_next++] = (struct active_kb *) src;
 }
 
 /**
@@ -72,28 +73,61 @@ static inline int remove_active_kb(struct active_kb *src)
     for (int i = index; i < (g_active_next - 2); i++) {
         g_active_kbs[i + 1] = g_active_kbs[i];
     }
+    // free the keyboard info.
+    lkby_keyboard_free(&LKBYACTIVE_KB(src));
     // free the previous allocated active_keyboard.
     free(src);
+    --g_active_next;
 }
 
 /**
  * This function shedule's a new discovered keyboard. It's 
  * porpuse is to create a new thread that will transmit
  * all it's keystrokes to the client side who is listening.
+ *
+ * @param src The info of the connected keyboard
  */
 static void schedule_kb(const union lkby_info *src)
 {
+    struct active_kb *new_active_keyboard = NULL;
+    // allocate space for the new active keyboard.
+    new_active_keyboard = (struct active_kb *) malloc(sizeof(struct active_kb));
+    if (NULL == new_active_keyboard) return;
+    memset(new_active_keyboard, 0x0, sizeof(struct active_kb));
 
+    // copy the keyboard infos.
+    memcpy(&LKBYACTIVE_KB(new_active_keyboard), src, sizeof(union lkby_info));
+    // start the thread.
+    if (pthread_create(&LKBYACTIVE_KB_THREAD(new_active_keyboard), NULL,
+                       &lkby_start_transmitter, NULL) != 0) return;
+}
+
+/**
+ * This function checks wether a thread is still
+ * alive and if it is not, it removes it from the
+ * list of active threads. In case a thread is terminating
+ * and the same keyboard connected again, then it will again
+ * inserted in the active keyboard list, but as a new entry.
+ */
+static inline void clean_threads(void)
+{
+    for (int i = 0; i < (g_active_next - 1); i++) {
+        if (0 == pthread_tryjoin_np(LKBYACTIVE_KB_THREAD(g_active_kbs[i]), NULL)) {
+            remove_active_kb(g_active_kbs[i]);
+            --i; // because we remove a thread, go back one to not skip any thread.
+        }
+    }
 }
 
 void *lkby_start_scheduler(void *sched_queue)
 {
     union lkby_info kb_info;
-    active_kbs_init();
+    init_active_kbs();
 
     //while (1) {
         if (-1 == sem_wait(&LKBYQUEUE_SEM(&g_sched_queue))) {
             lkbyqueue_dequeue(&kb_info, &LKBYQUEUE(&g_sched_queue));
+            clean_threads();
             schedule_kb(&kb_info);
         }
     //}
