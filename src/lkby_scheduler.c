@@ -31,9 +31,14 @@ static lkby_index g_active_next        = 0;
 /**
  * This function initializes the list of active keyboards.
  */
-static int init_active_kbs(void) 
+static inline int init_active_kbs(void) 
 {
-
+    g_active_kbs = (char **) malloc(sizeof(struct active_kb *) * g_s_active_kbs);
+    if (NULL == g_active_kbs) {
+        return -1;
+    }
+    memset(g_active_kbs, 0x0, sizeof(struct active_kb *) * g_s_active_kbs);
+    return 0;
 }
 
 /**
@@ -42,9 +47,9 @@ static int init_active_kbs(void)
  *
  * @param src The keyboard to be added.
  **/
-static int add_active_kb(const struct active_kb *src)
+static inline void add_active_kb(const struct active_kb *src)
 {
-
+    g_active_kbs[g_active_next++] = src;
 }
 
 /**
@@ -53,9 +58,22 @@ static int add_active_kb(const struct active_kb *src)
  * 
  * @param src The keyboard to remove.
  **/
-static int remove_active_kb(const struct active_kb *src)
+static inline int remove_active_kb(struct active_kb *src)
 {
+    int index = -1;
+    for (int i = 0; i < (g_active_next - 1); i++) {
+        if (g_active_kbs[i] == src) {
+            index = i;
+        }
+    }
+    if (-1 == index) return -1;
 
+    // move all the elements.
+    for (int i = index; i < (g_active_next - 2); i++) {
+        g_active_kbs[i + 1] = g_active_kbs[i];
+    }
+    // free the previous allocated active_keyboard.
+    free(src);
 }
 
 /**
