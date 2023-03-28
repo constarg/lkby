@@ -147,9 +147,6 @@ static void read_keyboards(FILE *devices)
             }
             store_kb_to_sched_queue((const char *) kb_event, 
                                     (const char *) kb_name);
-
-            free(kb_event); // TODO - remove this - for test only
-            free(kb_name); // TODO - remove this - for test only
         }
         free(dev);
     }

@@ -48,9 +48,16 @@ static inline int init_active_kbs(void)
  *
  * @param src The keyboard to be added.
  **/
-static inline void add_active_kb(const struct active_kb *src)
+static inline int add_active_kb(const struct active_kb *src)
 {
     g_active_kbs[g_active_next++] = (struct active_kb *) src;
+    if (g_active_next == g_s_active_kbs) {
+        g_s_active_kbs += 10;
+        g_active_kbs = (struct active_kb **) realloc(g_active_kbs, sizeof(struct active_kb *) * g_s_active_kbs);
+        if (NULL == g_active_kbs) return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -62,7 +69,7 @@ static inline void add_active_kb(const struct active_kb *src)
 static inline int remove_active_kb(struct active_kb *src)
 {
     int index = -1;
-    for (int i = 0; i < (g_active_next - 1); i++) {
+    for (int i = 0; i < g_active_next; i++) {
         if (g_active_kbs[i] == src) {
             index = i;
         }
@@ -70,14 +77,16 @@ static inline int remove_active_kb(struct active_kb *src)
     if (-1 == index) return -1;
 
     // move all the elements.
-    for (int i = index; i < (g_active_next - 2); i++) {
-        g_active_kbs[i + 1] = g_active_kbs[i];
+    for (int i = index; i < (g_active_next - 1); i++) {
+        g_active_kbs[i] = g_active_kbs[i + 1];
     }
     // free the keyboard info.
     lkby_keyboard_free(&LKBYACTIVE_KB(src));
     // free the previous allocated active_keyboard.
     free(src);
     --g_active_next;
+
+    return 0;
 }
 
 /**
@@ -99,7 +108,14 @@ static void schedule_kb(const union lkby_info *src)
     memcpy(&LKBYACTIVE_KB(new_active_keyboard), src, sizeof(union lkby_info));
     // start the thread.
     if (pthread_create(&LKBYACTIVE_KB_THREAD(new_active_keyboard), NULL,
-                       &lkby_start_transmitter, NULL) != 0) return;
+                       &lkby_start_transmitter, NULL) != 0) {
+        free(new_active_keyboard);
+        return;
+    }
+    if (-1 == add_active_kb(new_active_keyboard)) {
+        free(new_active_keyboard);
+        return;
+    }
 }
 
 /**
@@ -111,7 +127,7 @@ static void schedule_kb(const union lkby_info *src)
  */
 static inline void clean_threads(void)
 {
-    for (int i = 0; i < (g_active_next - 1); i++) {
+    for (int i = 0; i < g_active_next; i++) {
         if (0 == pthread_tryjoin_np(LKBYACTIVE_KB_THREAD(g_active_kbs[i]), NULL)) {
             remove_active_kb(g_active_kbs[i]);
             --i; // because we remove a thread, go back one to not skip any thread.
@@ -119,18 +135,21 @@ static inline void clean_threads(void)
     }
 }
 
-void *lkby_start_scheduler(void *sched_queue)
+void *lkby_start_scheduler(void *none)
 {
     union lkby_info kb_info;
     init_active_kbs();
 
     //while (1) {
-        if (-1 == sem_wait(&LKBYQUEUE_SEM(&g_sched_queue))) {
+    // TODO - remove this fore and replace it with the while.
+    for (int i = 0; i < 2; i++) {
+        if (0 == sem_wait(&LKBYQUEUE_SEM(&g_sched_queue))) {
             lkbyqueue_dequeue(&kb_info, &LKBYQUEUE(&g_sched_queue));
             clean_threads();
             schedule_kb(&kb_info);
         }
-    //}
+    }
 
+    free(g_active_kbs);
     return NULL; 
 }

@@ -24,6 +24,7 @@ int main()
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
 
     lkby_start_discovery(NULL);
+    lkby_start_scheduler(NULL);
 
     return 0;
 }
