@@ -90,6 +90,25 @@ static inline int remove_active_kb(struct active_kb *src)
 }
 
 /**
+ * This function adds a new element into the queue that the 
+ * transmitter will see and handle the current keyboard.
+ *
+ * @param src The information about the current keyboard.
+ */
+static void store_kb_to_transmit_queue(const union lkby_info *src) 
+{
+    // TODO - do a copy of the src in a temp lkby_info, in order to prevent free of the memory.
+    // store the information needed to schedule the keyboard.
+    LKBY_INFO_KEYBOARD_NAME((union lkby_info *) src, lkby_keyboard) = (char *) kb_name;
+    LKBY_INFO_KEYBOARD_EVENT((union lkby_info *) src)               = (char *) kb_event; 
+
+    // add the new schedule info into the queue.
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), (union lkby_info *) src);
+    // inform the scheduler thread that there is a new keyboard.
+    sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
+}
+
+/**
  * This function shedule's a new discovered keyboard. It's 
  * porpuse is to create a new thread that will transmit
  * all it's keystrokes to the client side who is listening.

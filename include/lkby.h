@@ -38,7 +38,7 @@ union lkby_info
     struct 
     {
        char *kb_name;  // The name of the keyboard that occure an event.
-       char *kb_event; // The associated event.
+       char *kb_event; // The associated event file.
     } lkby_keyboard;
 
     /**
