@@ -46,8 +46,7 @@ static char *read_device(FILE *devices)
     if (0 == curr_size && EOF == curr_ch) {
         free(device);
         return NULL;
-    } 
-
+    }
     return (char *) realloc(device, sizeof(char) * curr_size);
 }
 
@@ -96,7 +95,7 @@ static char *identified_keyboard(const char *device)
     free(ev);
     return NULL;
 }
-
+ 
 static char *retrieve_keyboard_name(const char *device) 
 {
     char *name_loc = strstr(device, "Name=");

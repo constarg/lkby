@@ -1,5 +1,6 @@
 #include <semaphore.h> 
 #include <pthread.h>
+#include <unistd.h> // TODO - remove this.
 
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
@@ -89,21 +90,10 @@ static inline int remove_active_kb(struct active_kb *src)
     return 0;
 }
 
-/**
- * This function adds a new element into the queue that the 
- * transmitter will see and handle the current keyboard.
- *
- * @param src The information about the current keyboard.
- */
-static void store_kb_to_transmit_queue(const union lkby_info *src) 
+static inline void store_kb_to_transmit_queue(const union lkby_info *src) 
 {
-    // TODO - do a copy of the src in a temp lkby_info, in order to prevent free of the memory.
-    // store the information needed to schedule the keyboard.
-    LKBY_INFO_KEYBOARD_NAME((union lkby_info *) src, lkby_keyboard) = (char *) kb_name;
-    LKBY_INFO_KEYBOARD_EVENT((union lkby_info *) src)               = (char *) kb_event; 
-
     // add the new schedule info into the queue.
-    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), (union lkby_info *) src);
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), src);
     // inform the scheduler thread that there is a new keyboard.
     sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
 }
@@ -125,16 +115,13 @@ static void schedule_kb(const union lkby_info *src)
 
     // copy the keyboard infos.
     memcpy(&LKBYACTIVE_KB(new_active_keyboard), src, sizeof(union lkby_info));
-    // start the thread.
-    if (pthread_create(&LKBYACTIVE_KB_THREAD(new_active_keyboard), NULL,
-                       &lkby_start_transmitter, NULL) != 0) {
-        free(new_active_keyboard);
-        return;
-    }
+    // Schedule the new keyboard.
     if (-1 == add_active_kb(new_active_keyboard)) {
         free(new_active_keyboard);
+        lkby_keyboard_free((union lkby_info *) src);
         return;
     }
+    store_kb_to_transmit_queue(src);
 }
 
 /**
@@ -168,7 +155,8 @@ void *lkby_start_scheduler(void *none)
             schedule_kb(&kb_info);
         }
     }
-
+    sleep(5); // TODO - REMOVE THIS
+    
     free(g_active_kbs);
     return NULL; 
 }

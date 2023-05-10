@@ -1,5 +1,5 @@
 object_files = ./build/lkby_scheduler.o ./build/lkby_transmitter.o ./build/lkby_discovery.o ./build/lkby_queue.o
-object_files_debug = ./build/lkby_scheduler_debug.o ./build/lkby_transmitter_debug.o ./build/lkby_discovery_debug.o ./build/lkby_queue.debug.o
+object_files_debug = ./build/lkby_scheduler_debug.o ./build/lkby_transmitter_debug.o ./build/lkby_discovery_debug.o ./build/lkby_queue_debug.o
 header_loc = -I ./include/
 
 GCC = gcc

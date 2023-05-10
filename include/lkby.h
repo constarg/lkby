@@ -37,8 +37,8 @@ union lkby_info
      */
     struct 
     {
-       char *kb_name;  // The name of the keyboard that occure an event.
-       char *kb_event; // The associated event file.
+        char *kb_name;  // The name of the keyboard that occure an event.
+        char *kb_event; // The associated event file.
     } lkby_keyboard;
 
     /**
@@ -47,8 +47,9 @@ union lkby_info
      */
     struct
     {
-       char       *kb_name;    // The name of the keyboard that occure an event.
-       lkby_status kb_status;  // The status of the event, if the key is pressed/relased
+        char       *kb_name;    // The name of the keyboard that occure an event.
+        char       *kb_code;    // The code of the pressed/released key.
+        lkby_status kb_status;  // The status of the event, if the key is pressed/relased
     } lkby_trans_key;
 };
 

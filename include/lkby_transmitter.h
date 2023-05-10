@@ -4,13 +4,15 @@
 #include "lkby.h"
 
 /**
- * This function is responsible to transmit the
- * keyboard events, like key pressed and key release.
+ * This function is responsible for two jobs. The first 
+ * job is to retrieve the new key from the coresponded 
+ * keyboard event file. The second job is to send the 
+ * key that was pressed/released to the client.
  * 
- * @param key_queue Is the queue that contains the next keystroke
- * to be transmitted to the clinets through the socket.
+ * @param cl_socker_fd The client socket, in which the information
+ * must be pushed.
  */
-extern void *lkby_start_transmitter(void *key_queue);
+extern void *lkby_start_transmitter(void *cl_socker_fd);
 
 
 #endif
