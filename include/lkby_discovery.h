@@ -4,7 +4,8 @@
 #include "lkby_queue.h"
 
 
-extern struct lkbyqueue_sync g_sched_queue; // The schedule queue.
+extern struct lkbyqueue_sync g_transmit_queue;
+
 
 /**
  * This function is responsible to do the job of the

