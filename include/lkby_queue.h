@@ -50,7 +50,7 @@ struct lkbyqueue_sync
 
 static inline void lkbyqueue_init(struct lkbyqueue *queue) 
 {
-    memset(queue, 0x0, sizeof(struct lkbyqueue));
+    (void)memset(queue, 0x0, sizeof(struct lkbyqueue));
 }
 
 static inline int lkbyqueue_sync_init(struct lkbyqueue_sync *s_queue)

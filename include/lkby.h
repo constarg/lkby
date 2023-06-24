@@ -56,7 +56,7 @@ union lkby_info
 
 static inline void lkby_init(union lkby_info *src)
 {
-    memset(src, 0x0, sizeof(union lkby_info));
+    (void)memset(src, 0x0, sizeof(union lkby_info));
 }
 
 static inline void lkby_trans_key_free(union lkby_info *src)

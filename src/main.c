@@ -18,6 +18,7 @@
 // declare global queues.
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
 
+
 int main(int argc, char *argv[])
 {
     /*// initialize queues.
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
     */
     int server_fd = 0;                 // Server socket file descriptor.
     int client_fd = 0;                 // Client socket file descriptor.
+    int errors = 0;                    // The occured errors.
     socklen_t len = 0;                 // The length of the server addr.
     struct sockaddr_un server_addr;    // The server address (unix file).
     struct sockaddr_un client_addr;    // The server address (unix file).
@@ -69,12 +71,20 @@ int main(int argc, char *argv[])
         while (1) {
             // Listen for a new connection.
             // TODO - what if the error continues more than one time?
-            if (-1 == listen(server_fd, MAX_CONNECTIONS)) continue;
+            if (3 == errors) break; // If more than one error has occured, then reset the whole server.
+            if (-1 == listen(server_fd, MAX_CONNECTIONS)) {
+                ++errors; // increase occured errors.
+                continue;
+            }
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &len);
             len = sizeof(client_addr);
-            if (-1 == client_fd) continue;
+            if (-1 == client_fd) {
+                ++errors;
+                continue;
+            }
             if (-1 == getpeername(client_fd, (struct sockaddr *) &client_addr, &len)) {
                 close(client_fd);
+                ++errors;
                 continue;
             }
 
@@ -87,6 +97,7 @@ int main(int argc, char *argv[])
             // TODO - transmit the keystrokes to the other process.
         }
         close(server_fd);
+        errors = 0; // Reset occured errors.
     }
 
     // TODO - [SECURITY]
