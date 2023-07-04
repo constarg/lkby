@@ -9,10 +9,9 @@
  * keyboard event file. The second job is to send the 
  * key that was pressed/released to the client.
  * 
- * @param cl_socker_fd The client socket, in which the information
- * must be pushed.
+ * @param client_list Clietns to recieve keystrokes.
  */
-extern void *lkby_start_transmitter(void *cl_socker_fd);
+extern void *lkby_start_transmitter(void *client_list);
 
 
 #endif

@@ -5,6 +5,8 @@
 #include <memory.h>
 #include <malloc.h>
 
+#define MAX_CONNECTIONS 10
+
 /**
  * This macro retrieves the name of the keyboard.
  */

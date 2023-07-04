@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <semaphore.h>
+#include <sys/socket.h>
 
 #include "lkby_transmitter.h"
+#include "lkby_discovery.h"
 #include "lkby.h"
 
 #define LKBYACTIVE_KB(act) \
@@ -104,13 +107,23 @@ static inline void clean_threads(void)
     }
 }
 
-
 // TODO - create a worker thread to await for a new key press/release.
 // TODO - send the previous information throuth the client socker.
 
-
-void *lkby_start_transmitter(void *cl_socker_fd)
+void *lkby_start_transmitter(void *client_list)
 {
+    int *updated_list = (int *) client_list;
+    char test_byte;
+    while (1) {
+        if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) return NULL;
+
+        for (int c = 0; c < MAX_CONNECTIONS; c++) {
+            // If the client is inactice, ignore it.
+            if (0 != recv(updated_list[c], &test_byte, 1, MSG_DONTWAIT | MSG_PEEK)) continue;
+            // Otherwise, send the keystrokes.
+
+        }
+    }
 
     return NULL;
 }

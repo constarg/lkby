@@ -156,16 +156,16 @@ void *lkby_start_discovery(void *none)
     FILE *devices; // pointer to the device file. 
 
     // start the keyboard identification process
-    //while(1) {
+    while(1) {
         devices = fopen("/proc/bus/input/devices", "r");
         if (NULL == devices) {
             sleep(RETRY);
-            //continue;
+            continue;
         }
         read_keyboards(devices);
         fclose(devices);
-        //sleep(REDISCOVER);
-    //}
+        sleep(REDISCOVER);
+    }
 
     return NULL;
 }

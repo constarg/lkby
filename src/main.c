@@ -5,13 +5,14 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "lkby_transmitter.h"
 #include "lkby_discovery.h"
 #include "lkby_queue.h"
+#include "lkby.h"
 
 #define SERVER_SOCK_PATH "/tmp/unix_lkby_sock.server"
-#define MAX_CONNECTIONS 10
 
 #define RETRY 5 // Seconds.
 
@@ -19,25 +20,67 @@
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
 
 
+// The currently connected clients.
+static size_t g_active_clients_s = 0;
+static int g_active_clients[MAX_CONNECTIONS];
+
+
+static inline void remove_inactive_clients()
+{
+    char test_byte;
+    for (int s = 0; s < g_active_clients_s; s++) {
+        if (0 == g_active_clients[s]) break; 
+        if (0 != recv(g_active_clients[s], &test_byte, 1, MSG_DONTWAIT | MSG_PEEK)) {
+            // If we can't recieve data from the specific cliend, then the client is disconnected.
+            // Remove client.
+            for (int rm = s; rm < g_active_clients_s - 1; rm++) {
+                g_active_clients[rm] = g_active_clients[rm + 1];
+            }
+            --g_active_clients_s;
+        }
+    }
+}
+
+/**
+ * This function adds a new client in the client list.
+ * As described in the remove_inactive_clients fucntion, 
+ * when the algorithm reach a client who's the value is
+ * zero, then it means there no more clients after this
+ * client. Therefore, this is the place where the new
+ * client should be inserted. Otherwise there is not 
+ * anough space to 
+ * 
+ * @arg client_fd The client file descriptor to add
+ * @return Zero is the client inserted successfully, otherwise
+ * -1 is returned.
+*/
+static inline int add_new_client(const int client_fd)
+{
+    if (g_active_clients_s == MAX_CONNECTIONS) {
+        return -1;
+    }
+    g_active_clients[++g_active_clients_s] = (int) client_fd;
+    return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
-    /*// initialize queues.
+    // initialize queues.
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
-
-    lkby_start_discovery(NULL);*/
 
     /**
      * Service related variables.
     */
-    //pthread_t sched_th    = 0;         // The schedule thread.
-    //pthread_t transmit_th = 0;         // The transmitter thread.
-    //pthread_t discov_th   = 0;         // The discovery thread.
+    pthread_t transmit_th = 0;         // The transmitter thread.
+    pthread_t discov_th   = 0;         // The discovery thread.
+    int cancel_th_error   = 0;
     /**
      * Communication related variables. 
     */
     int server_fd = 0;                 // Server socket file descriptor.
     int client_fd = 0;                 // Client socket file descriptor.
-    int errors = 0;                    // The occured errors.
+    int conn_errors = 0;               // The occured errors.
     socklen_t len = 0;                 // The length of the server addr.
     struct sockaddr_un server_addr;    // The server address (unix file).
     struct sockaddr_un client_addr;    // The server address (unix file).
@@ -71,22 +114,33 @@ int main(int argc, char *argv[])
         while (1) {
             // Listen for a new connection.
             // TODO - what if the error continues more than one time?
-            if (3 == errors) break; // If more than one error has occured, then reset the whole server.
+            if (3 == conn_errors) break; // If more than one error has occured, then reset the whole server.
             if (-1 == listen(server_fd, MAX_CONNECTIONS)) {
-                ++errors; // increase occured errors.
+                ++conn_errors; // increase occured errors.
                 continue;
             }
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &len);
             len = sizeof(client_addr);
             if (-1 == client_fd) {
-                ++errors;
+                ++conn_errors;
                 continue;
             }
             if (-1 == getpeername(client_fd, (struct sockaddr *) &client_addr, &len)) {
                 close(client_fd);
-                ++errors;
+                ++conn_errors;
                 continue;
             }
+
+            // Check if there is an already active thread that discover keyboards.
+            if (0 != pthread_tryjoin_np(discov_th, NULL)) {
+                if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) continue;
+            }
+
+            remove_inactive_clients();
+            add_new_client(client_fd);
+            cancel_th_error = pthread_cancel(transmit_th);
+            if (ESRCH != cancel_th_error) continue;
+            if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, (void *) g_active_clients)) continue;
 
             // After the connection established, find the available kayboards and send the information to the client.
             // TODO - don't make more than the necessary threads. If more than one client has connected then 
@@ -97,7 +151,7 @@ int main(int argc, char *argv[])
             // TODO - transmit the keystrokes to the other process.
         }
         close(server_fd);
-        errors = 0; // Reset occured errors.
+        conn_errors = 0; // Reset occured errors.
     }
 
     // TODO - [SECURITY]
