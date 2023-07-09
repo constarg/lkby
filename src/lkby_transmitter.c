@@ -29,7 +29,6 @@ static struct active_kb **g_active_kbs = NULL; // The active keyboards.
 static size_t g_s_active_kbs           = 10; // The initialize keyboard number.
 static lkby_index g_active_next        = 0;
 
-
 /**
  * This function initializes the list of active keyboards.
  */
