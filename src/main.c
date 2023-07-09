@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
                 ++conn_errors;
                 continue;
             }
+            conn_errors = 0;
 
             // Check if there is an already active thread that discover keyboards.
             if (0 != pthread_tryjoin_np(discov_th, NULL)) {
