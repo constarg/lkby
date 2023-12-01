@@ -1,4 +1,5 @@
 #include "lkby_queue.h"
+#include <stdbool.h>
 
 void lkbyqueue_dequeue(union lkby_info *dst, struct lkbyqueue *queue)
 {
@@ -11,6 +12,12 @@ void lkbyqueue_dequeue(union lkby_info *dst, struct lkbyqueue *queue)
     (void)memcpy(dst, &tmp->data, sizeof(union lkby_info));
     // free the node.
     free(tmp);
+}
+
+bool lkbyqueue_isempty(struct lkbyqueue *queue)
+{
+    if (NULL == queue->front) return true;
+    return false;
 }
 
 void lkbyqueue_enqueue(struct lkbyqueue *queue, const union lkby_info *src)

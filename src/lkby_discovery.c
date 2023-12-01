@@ -15,6 +15,8 @@
 #define KEYBOARD_ID2 "120013" // normal keyboard
 #define KEYBOARD_ID3 "12001b" // bluetooth keyboard
 
+#define KB_DEVICES_LOC "/proc/bus/input/devices"
+
 #define IS_KEYBOARD(dev_id) \
     ((!strcmp(dev_id, KEYBOARD_ID1) || !strcmp(dev_id, KEYBOARD_ID2)) ||  !strcmp(dev_id, KEYBOARD_ID3))
 
@@ -130,7 +132,7 @@ static inline void store_kb_to_transmit_queue(const char *kb_event, const char *
     // add the new schedule info into the queue.
     lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &kb_transmit_info);
     // inform the scheduler thread that there is a new keyboard.
-    sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
+    (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
 }
 
 static void read_keyboards(FILE *devices)
@@ -139,9 +141,12 @@ static void read_keyboards(FILE *devices)
     char *kb_event = NULL;
     char *kb_name  = NULL;
     while ((dev = read_device(devices)) != NULL) {
+        // todo - guard close
         if ((kb_event = identified_keyboard(dev)) != NULL) {
             if (NULL == (kb_name = retrieve_keyboard_name(dev))) {
                 free(kb_event);
+                free(dev);
+                dev = NULL;
                 continue;
             }
             store_kb_to_transmit_queue((const char *) kb_event, 
@@ -157,14 +162,14 @@ void *lkby_start_discovery(void *none)
 
     // start the keyboard identification process
     while(1) {
-        devices = fopen("/proc/bus/input/devices", "r");
+        devices = fopen(KB_DEVICES_LOC, "r");
         if (NULL == devices) {
-            sleep(RETRY);
+            (void)sleep(RETRY);
             continue;
         }
         read_keyboards(devices);
-        fclose(devices);
-        sleep(REDISCOVER);
+        (void)fclose(devices);
+        (void)sleep(REDISCOVER);
     }
 
     return NULL;

@@ -33,6 +33,7 @@ static inline void remove_inactive_clients()
         if (0 != recv(g_active_clients[s], &test_byte, 1, MSG_DONTWAIT | MSG_PEEK)) {
             // If we can't recieve data from the specific cliend, then the client is disconnected.
             // Remove client.
+            g_active_clients[s] = 0x0;
             for (int rm = s; rm < g_active_clients_s - 1; rm++) {
                 g_active_clients[rm] = g_active_clients[rm + 1];
             }
@@ -63,10 +64,15 @@ static inline int add_new_client(const int client_fd)
     return 0;
 }
 
+static inline void init_client_list() 
+{
+    (void)memset(g_active_clients, 0x0, sizeof(int) * MAX_CONNECTIONS);
+}
 
 int main(int argc, char *argv[])
 {
     // initialize queues.
+    init_client_list();
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
 
     /**
@@ -110,10 +116,11 @@ int main(int argc, char *argv[])
             sleep(RETRY);
             continue;
         }
+
         // Repeat the code below for ever.
         while (1) {
             // Listen for a new connection.
-            // TODO - what if the error continues more than one time?
+            // If 3 consecutives errors have been occured, then reactivate the whole server.
             if (3 == conn_errors) break; // If more than one error has occured, then reset the whole server.
             if (-1 == listen(server_fd, MAX_CONNECTIONS)) {
                 ++conn_errors; // increase occured errors.
@@ -139,17 +146,20 @@ int main(int argc, char *argv[])
 
             remove_inactive_clients();
             add_new_client(client_fd);
+            // Cancel the thread in order to update the clients.
+            // TODO - change this. Don't use cancel to update the client list, instead use a different queue, to update dynamicaly the clients.
             cancel_th_error = pthread_cancel(transmit_th);
             if (ESRCH != cancel_th_error) continue;
+            // Create again the same thread with updated clients.
             if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, (void *) g_active_clients)) continue;
 
-            // After the connection established, find the available kayboards and send the information to the client.
-            // TODO - don't make more than the necessary threads. If more than one client has connected then 
-            // pass on the trasmitter a list with all the active client sockets. If the transmitter is already active
+            // TODO - DONE - After the connection established, find the available kayboards and send the information to the client.
+            // TODO - DONE - don't make more than the necessary threads. If more than one client has connected then 
+            // TODO - DONE - pass on the trasmitter a list with all the active client sockets. If the transmitter is already active
             // then kill him and after than recreate the thread with the updated list of clients.
-            // TODO - discover keyboards.
-            // TODO - schedule the new keyboards.
-            // TODO - transmit the keystrokes to the other process.
+            // TODO - DONE - discover keyboards.
+            // TODO - DONE - schedule the new keyboards.
+            // TODO - DONE - transmit the keystrokes to the other process.
         }
         close(server_fd);
         conn_errors = 0; // Reset occured errors.

@@ -3,7 +3,6 @@
 
 #include "lkby_queue.h"
 
-
 extern struct lkbyqueue_sync g_transmit_queue;
 
 

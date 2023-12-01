@@ -26,7 +26,7 @@
 #define LKBY_INFO_KEYBOARD_STATUS(lkby_info) \
     (lkby_info)->lkby_trans_key.kb_status
 
-// TODO - make the status using the bits?
+// TODO - make the status using the bit field?
 
 typedef int8_t lkby_status;
 

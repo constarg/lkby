@@ -2,10 +2,14 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/socket.h>
+#include <memory.h>
+#include <stdbool.h>
 
 #include "lkby_transmitter.h"
 #include "lkby_discovery.h"
 #include "lkby.h"
+
+#define KB_EVENTS_LOC "/dev/input/"
 
 #define LKBYACTIVE_KB(act) \
     (act)->kb
@@ -70,11 +74,13 @@ static inline int remove_active_kb(struct active_kb *src)
 {
     int index = -1;
     for (int i = 0; i < g_active_next; i++) {
-        if (g_active_kbs[i] == src) { // TODO - chagne this to memcmp
+        if (sizeof(struct active_kb) 
+            == memcmp(&g_active_kbs[i], src, sizeof(struct active_kb))) { // TODO - validate.
             index = i;
         }
     }
     if (-1 == index) return -1;
+    g_active_kbs[index] = 0x0;
 
     // move all the elements.
     for (int i = index; i < (g_active_next - 1); i++) {
@@ -107,21 +113,31 @@ static inline void clean_threads(void)
 }
 
 // TODO - create a worker thread to await for a new key press/release.
-// TODO - send the previous information throuth the client socker.
+// TODO - send this information throuth the client socket.
+
+void *keyboard_routine(void *client_list)
+{
+
+    return NULL;
+}
 
 void *lkby_start_transmitter(void *client_list)
 {
     int *updated_list = (int *) client_list;
-    char test_byte;
+    union lkby_info kb;      // The current keyboard.
+    struct active_kb *ac_kb; // Label the current keyboard as active. 
+
     while (1) {
         if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) return NULL;
-
-        for (int c = 0; c < MAX_CONNECTIONS; c++) {
-            // If the client is inactice, ignore it.
-            if (0 != recv(updated_list[c], &test_byte, 1, MSG_DONTWAIT | MSG_PEEK)) continue;
-            // Otherwise, send the keystrokes.
-
+        while (false != lkbyqueue_isempty(&LKBYQUEUE(&g_transmit_queue))) {
+            lkbyqueue_dequeue(&kb, &LKBYQUEUE(&g_transmit_queue));
+            ac_kb = (struct active_kb *) malloc(sizeof(struct active_kb));
+            if (NULL == ac_kb) continue;
+            (void)memcpy(&ac_kb->kb, &kb, sizeof(union lkby_info));
+            // Create a thread to accosiate the keyboard.
+            if (pthread_create(&ac_kb->kb_thread, NULL, &keyboard_routine, (void *) updated_list)) continue;
         }
+
     }
 
     return NULL;
