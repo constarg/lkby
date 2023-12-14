@@ -1,11 +1,9 @@
 #include <malloc.h>
-#include <stdio.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
@@ -19,6 +17,7 @@
 // declare global queues.
 struct lkbyqueue_sync g_keyboard_queue; // The queue used to schedule data.
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
+struct lkbyqueue_sync g_user_queue;     // The queue used to inform tansmitter for new users.
 
 int main(int argc, char *argv[])
 {
@@ -42,18 +41,15 @@ int main(int argc, char *argv[])
     struct sockaddr_un client_addr;    // The server address (unix file).
 
     // Check if there is an already active thread that discover keyboards.
-    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) {
-        printf("FAILED 1\n");
-    }
+    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) return -1;
+    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
 
-    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) {
-        printf("FAILED 2\n");
-    }
-
+    // Detach each thread from the main thread.
+    // pthread_detach(discov_th);
+    // pthread_detach(sched_th);
 
     pthread_join(discov_th, NULL);
     pthread_join(sched_th, NULL);
-
 
     /*
     // If any step excpet the listening/accept part failed, retry after 5 seconds again.

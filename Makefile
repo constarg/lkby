@@ -1,5 +1,5 @@
-object_files = ./build/lkby_scheduler.o ./build/lkby_discovery.o ./build/lkby_queue.o
-object_files_debug = ./build/lkby_scheduler_debug.o ./build/lkby_discovery_debug.o ./build/lkby_queue_debug.o
+object_files = ./build/lkby_scheduler.o ./build/lkby_discovery.o ./build/lkby_queue.o ./build/lkby_transmitter.o
+object_files_debug = ./build/lkby_scheduler_debug.o ./build/lkby_discovery_debug.o ./build/lkby_queue_debug.o ./build/lkby_transmitter_debug.o
 header_loc = -I ./include/
 
 GCC = gcc
@@ -20,6 +20,9 @@ debug: dir_make ${object_files_debug}
 ./build/lkby_scheduler.o: ./src/lkby_scheduler.c
 	${GCC} ${c_features} ${c_production_flags} ${header_loc} -c ./src/lkby_scheduler.c ${libraries} -o ./build/lkby_scheduler.o
 
+./build/lkby_transmitter.o: ./src/lkby_transmitter.c
+	${GCC} ${c_features} ${c_production_flags} ${header_loc} -c ./src/lkby_transmitter.c ${libraries} -o ./build/lkby_transmitter.o
+
 ./build/lkby_discovery.o: ./src/lkby_discovery.c
 	${GCC} ${c_features} ${c_production_flags} ${header_loc} -c ./src/lkby_discovery.c ${libraries} -o ./build/lkby_discovery.o
 
@@ -28,6 +31,9 @@ debug: dir_make ${object_files_debug}
 
 ./build/lkby_scheduler_debug.o: ./src/lkby_scheduler.c
 	${GCC} ${c_features} ${c_debug_flags} ${header_loc} -c ./src/lkby_scheduler.c ${libraries} -o ./build/lkby_scheduler_debug.o
+
+./build/lkby_transmitter_debug.o: ./src/lkby_transmitter.c
+	${GCC} ${c_features} ${c_debug_flags} ${header_loc} -c ./src/lkby_transmitter.c ${libraries} -o ./build/lkby_transmitter_debug.o
 
 ./build/lkby_discovery_debug.o: ./src/lkby_discovery.c
 	${GCC} ${c_features} ${c_debug_flags} ${header_loc} -c ./src/lkby_discovery.c ${libraries} -o ./build/lkby_discovery_debug.o

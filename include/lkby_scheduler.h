@@ -4,7 +4,7 @@
 #include "lkby.h"
 
 // This queue contains the information to transmit.
-extern struct lkbyqueue_sync g_transmit_queue;
+extern struct lkbyqueue_sync g_transmit_queue; // Declared in main.
 
 /**
  * 

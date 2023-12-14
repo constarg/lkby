@@ -9,8 +9,6 @@
 #include <linux/input.h>
 #include <linux/input-event-codes.h>
 
-#include <errno.h>
-
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
 #include "lkby.h"
@@ -38,6 +36,12 @@ struct active_kb
 static struct active_kb **g_active_kbs = NULL; // The active keyboards.
 static size_t g_s_active_kbs           = 10; // initialize keyboard number.
 static lkby_index g_active_next        = 0;
+
+
+static inline void active_kb_init(struct active_kb *src)
+{
+    (void)memset(src, 0x0, sizeof(struct active_kb));
+}
 
 /**
  * This function initializes the list of active keyboards.
@@ -79,15 +83,14 @@ static inline int add_active_kb(const struct active_kb *src)
  **/
 static int remove_active_kb(struct active_kb *src)
 {
+    printf("%s\n", LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(src), lkby_keyboard));
     int index = -1;
     for (int i = 0; i < g_active_next; i++) {
-        // TODO - use the name of the keyboard to find out, not the meomry.
         if (!strcmp(
             LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(g_active_kbs[i]), lkby_keyboard),
             LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(src), lkby_keyboard)
-        )) { // TODO - validate.
+        )) { 
             index = i;
-            printf("FIND IT\n");
         }
     }
     if (-1 == index) {
@@ -97,7 +100,7 @@ static int remove_active_kb(struct active_kb *src)
     g_active_kbs[index] = 0x0;
 
     // move all the elements.
-    for (int i = index; i < (g_active_next - 1); i++) {
+    for (int i = index; i < g_active_next; i++) {
         g_active_kbs[i] = g_active_kbs[i + 1];
     }
     // free the keyboard info.
@@ -147,7 +150,7 @@ static inline void clean_threads(void)
 */
 static inline bool is_keyboard_active(union lkby_info *src) 
 {
-    for (int i = 0; i < g_s_active_kbs; i++) {
+    for (int i = 0; i < g_active_next; i++) {
         // Check if the given keyboard much any currently active keyboard.
         if (!strcmp(
             LKBY_INFO_KEYBOARD_EVENT(src),
@@ -160,10 +163,16 @@ static inline bool is_keyboard_active(union lkby_info *src)
     return false;
 }
 
-// static void keyboard_routine_cleanup_handler(void *arg)
-// {
-
-// }
+/**
+ * This routine is used to cleanup the used memory
+ * that may not be freed properly during the execution
+ * of keyboard_routine.
+*/
+static void keyboard_routine_cleanup_handler(void *src)
+{
+    union lkby_info *keyboard = (union lkby_info *) src;
+    free(keyboard);
+}
 
 /**
  * This routine is responsible to track any keystroke from
@@ -174,6 +183,8 @@ static inline bool is_keyboard_active(union lkby_info *src)
 */
 static void *keyboard_routine(void *src)
 {
+    pthread_cleanup_push(keyboard_routine_cleanup_handler, src);
+
     union lkby_info keyboard;
     memcpy(&keyboard, ((union lkby_info *) src), sizeof(union lkby_info));
 
@@ -191,39 +202,44 @@ static void *keyboard_routine(void *src)
 
     // Open the eventX file of the keyboard.
     event_fd = open(absolute_path_to_event, O_RDONLY);
+    if (-1 == event_fd) goto failed_label;
 
-    if (-1 == event_fd) {
-        printf("%s\n", strerror(errno));
-        goto failed_label;
-    }
     // Start monitor the keyboard.
-//    while (true) {
+    while (true) {
         if (read(event_fd, &kb_event_buffer, sizeof(kb_event_buffer)) == -1) goto failed_label;
         // If the occured event is a keypress/release
         if (kb_event_buffer.type == EV_KEY) {
             // Build info for the transmitter.
             lkby_init(&transmit_info);
             // Fill the members.
+            printf("%x\n", kb_event_buffer.code);
             LKBY_INFO_KEYBOARD_NAME(&transmit_info, lkby_trans_key) = LKBY_INFO_KEYBOARD_NAME(&keyboard, lkby_keyboard);
             LKBY_INFO_KEYBOARD_CODE(&transmit_info)   = kb_event_buffer.code;
             LKBY_INFO_KEYBOARD_STATUS(&transmit_info) = kb_event_buffer.value;
 
+            if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
             // inform the transmitter thread that there is a new event.
             (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
-//        }
+        }
     }
 
 
 failed_label:
     free(absolute_path_to_event);
+    pthread_cleanup_pop(1);
     return NULL;
 }
 
+/**
+ * This function clear up the data that the lkby_start_scheduler
+ * thread may left behind.
+*/
 static void scheduler_cleanup_handler(void *none)
 {
-    for (int i = 0; i < g_s_active_kbs; i++) {
+    for (int i = 0; i < g_active_next; i++) {
         remove_active_kb(g_active_kbs[i]);
+        --i;
     }
     free(g_active_kbs);
 }
@@ -233,33 +249,37 @@ void *lkby_start_scheduler(void *none)
     init_active_kbs();
     pthread_cleanup_push(scheduler_cleanup_handler, NULL);
 
-    union lkby_info kb; // The current keyboard
+    union lkby_info *kb; // The current keyboard
     struct active_kb *ac_kb; // Label the current keyboard as active. 
-    union lkby_info *tmp;
 
-    for (int i = 0; i < 2; i++) {
-    if (0 != sem_wait(&LKBYQUEUE_SEM(&g_keyboard_queue))) return NULL;
-        tmp = (union lkby_info *) malloc(sizeof(union lkby_info));
-        lkby_init(tmp);
-        lkbyqueue_dequeue(tmp, &LKBYQUEUE(&g_keyboard_queue));
+    //while (true) {
+        if (0 != sem_wait(&LKBYQUEUE_SEM(&g_keyboard_queue))) return NULL; // TODO - change return to continue;
+        clean_threads();
 
-        // // Create a new active keyboard.
-        ac_kb = (struct active_kb *) malloc(sizeof(struct active_kb));
-        if (NULL == ac_kb) continue;
+        while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_keyboard_queue))) {
+            kb = (union lkby_info *) malloc(sizeof(union lkby_info));
+            if (NULL == kb) continue;
+            
+            lkby_init(kb);
+            lkbyqueue_dequeue(kb, &LKBYQUEUE(&g_keyboard_queue));
+            
+            if (is_keyboard_active(kb)) {
+                free(kb);
+                continue;
+            }
 
-        (void)memset(ac_kb, 0x0, sizeof(struct active_kb));
-        (void)memcpy(&ac_kb->kb, &kb, sizeof(union lkby_info));
-        add_active_kb((const struct active_kb *) ac_kb);
+            // Create a new active keyboard.
+            ac_kb = (struct active_kb *) malloc(sizeof(struct active_kb));
+            if (NULL == ac_kb) continue;
+            
+            active_kb_init(ac_kb);
+            (void)memcpy(&ac_kb->kb, kb, sizeof(union lkby_info));
+            add_active_kb((const struct active_kb *) ac_kb);
 
-        // // Create the coresponded thread.
-        if (0 != pthread_create(&ac_kb->kb_thread, NULL, keyboard_routine, (void *) tmp)) continue;
-    }
-    for (int i = 0; i < g_active_next - 1; i++) {
-        pthread_join(g_active_kbs[i]->kb_thread, NULL);
-    }
-
-    //while (1) {
-
+            // Create the coresponded thread.
+            if (0 != pthread_create(&ac_kb->kb_thread, NULL, keyboard_routine, (void *) kb)) continue;
+            pthread_detach(ac_kb->kb_thread);
+        }
     //}
     
     pthread_cleanup_pop(1);

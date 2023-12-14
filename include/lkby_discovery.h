@@ -3,7 +3,8 @@
 
 #include "lkby_queue.h"
 
-extern struct lkbyqueue_sync g_keyboard_queue;
+// This queue is used to store the discovered keyboards and notify the scheduler.
+extern struct lkbyqueue_sync g_keyboard_queue; // Declared in main.
 
 
 /**

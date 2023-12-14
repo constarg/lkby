@@ -110,8 +110,8 @@ static char *retrieve_keyboard_name(const char *device)
     while (*(name_loc + len++) != '\n');
     name = (char *) malloc(sizeof(char) * (len - 1));
     if (NULL == name) return NULL;
+    (void)memset(name, 0x0, len - 1);
     (void)memcpy(name, name_loc, len - 2); // skip the last "
-    name[len - 2] = '\0';
 
     return name;
 }
@@ -133,8 +133,6 @@ static inline void store_kb_to_transmit_queue(const char *kb_event, const char *
 
     // add the new schedule info into the queue.
     lkbyqueue_enqueue(&LKBYQUEUE(&g_keyboard_queue), &kb_scheduling_info);
-    // inform the scheduler thread that there is a new keyboard.
-    (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
 static void read_keyboards(FILE *devices)
@@ -156,6 +154,8 @@ static void read_keyboards(FILE *devices)
         }
         free(dev);
     }
+    // inform the scheduler thread that there are keyboards in the queue.
+    (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
 void *lkby_start_discovery(void *none)
