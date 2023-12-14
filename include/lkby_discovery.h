@@ -3,7 +3,7 @@
 
 #include "lkby_queue.h"
 
-extern struct lkbyqueue_sync g_transmit_queue;
+extern struct lkbyqueue_sync g_keyboard_queue;
 
 
 /**

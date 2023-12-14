@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "lkby_transmitter.h"
+#include "lkby_scheduler.h"
 #include "lkby_discovery.h"
 #include "lkby_queue.h"
 #include "lkby.h"
@@ -17,70 +17,20 @@
 #define RETRY 5 // Seconds.
 
 // declare global queues.
+struct lkbyqueue_sync g_keyboard_queue; // The queue used to schedule data.
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
-
-
-// The currently connected clients.
-static size_t g_active_clients_s = 0;
-static int g_active_clients[MAX_CONNECTIONS];
-
-
-static inline void remove_inactive_clients()
-{
-    char test_byte;
-    for (int s = 0; s < g_active_clients_s; s++) {
-        if (0 == g_active_clients[s]) break; 
-        if (0 != recv(g_active_clients[s], &test_byte, 1, MSG_DONTWAIT | MSG_PEEK)) {
-            // If we can't recieve data from the specific cliend, then the client is disconnected.
-            // Remove client.
-            g_active_clients[s] = 0x0;
-            for (int rm = s; rm < g_active_clients_s - 1; rm++) {
-                g_active_clients[rm] = g_active_clients[rm + 1];
-            }
-            --g_active_clients_s;
-        }
-    }
-}
-
-/**
- * This function adds a new client in the client list.
- * As described in the remove_inactive_clients fucntion, 
- * when the algorithm reach a client who's the value is
- * zero, then it means there no more clients after this
- * client. Therefore, this is the place where the new
- * client should be inserted. Otherwise there is not 
- * anough space to 
- * 
- * @arg client_fd The client file descriptor to add
- * @return Zero is the client inserted successfully, otherwise
- * -1 is returned.
-*/
-static inline int add_new_client(const int client_fd)
-{
-    if (g_active_clients_s == MAX_CONNECTIONS) {
-        return -1;
-    }
-    g_active_clients[++g_active_clients_s] = (int) client_fd;
-    return 0;
-}
-
-static inline void init_client_list() 
-{
-    (void)memset(g_active_clients, 0x0, sizeof(int) * MAX_CONNECTIONS);
-}
 
 int main(int argc, char *argv[])
 {
-    // initialize queues.
-    init_client_list();
+    if (lkbyqueue_sync_init(&g_keyboard_queue) != 0) return -1;
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
 
     /**
      * Service related variables.
     */
     pthread_t transmit_th = 0;         // The transmitter thread.
+    pthread_t sched_th    = 0;         // The scheduler thread.
     pthread_t discov_th   = 0;         // The discovery thread.
-    int cancel_th_error   = 0;
     /**
      * Communication related variables. 
     */
@@ -91,6 +41,21 @@ int main(int argc, char *argv[])
     struct sockaddr_un server_addr;    // The server address (unix file).
     struct sockaddr_un client_addr;    // The server address (unix file).
 
+    // Check if there is an already active thread that discover keyboards.
+    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) {
+        printf("FAILED 1\n");
+    }
+
+    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) {
+        printf("FAILED 2\n");
+    }
+
+
+    pthread_join(discov_th, NULL);
+    pthread_join(sched_th, NULL);
+
+
+    /*
     // If any step excpet the listening/accept part failed, retry after 5 seconds again.
     while (1) {
         // initialize the sockaddr
@@ -144,14 +109,10 @@ int main(int argc, char *argv[])
                 if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) continue;
             }
 
-            remove_inactive_clients();
-            add_new_client(client_fd);
             // Cancel the thread in order to update the clients.
             // TODO - change this. Don't use cancel to update the client list, instead use a different queue, to update dynamicaly the clients.
-            cancel_th_error = pthread_cancel(transmit_th);
-            if (ESRCH != cancel_th_error) continue;
             // Create again the same thread with updated clients.
-            if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, (void *) g_active_clients)) continue;
+            //if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, (void *) g_active_clients)) continue;
 
             // TODO - DONE - After the connection established, find the available kayboards and send the information to the client.
             // TODO - DONE - don't make more than the necessary threads. If more than one client has connected then 
@@ -163,7 +124,7 @@ int main(int argc, char *argv[])
         }
         close(server_fd);
         conn_errors = 0; // Reset occured errors.
-    }
+    }*/
 
     // TODO - [SECURITY]
     /**

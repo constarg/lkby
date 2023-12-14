@@ -21,6 +21,14 @@
     (lkby_info)->lkby_keyboard.kb_event
 
 /**
+ * This macro retrieves the code of the
+ * keyboard.
+ */
+#define LKBY_INFO_KEYBOARD_CODE(lkby_info) \
+    (lkby_info)->lkby_trans_key.kb_status
+
+
+/**
  * This macro retrieves the status of a key
  */
 #define LKBY_INFO_KEYBOARD_STATUS(lkby_info) \
@@ -29,6 +37,7 @@
 // TODO - make the status using the bit field?
 
 typedef int8_t lkby_status;
+typedef int    lkby_user_id; // This integer coresponds to the socker fd of the a user.
 
 union lkby_info
 {
@@ -53,17 +62,14 @@ union lkby_info
         char       *kb_code;    // The code of the pressed/released key.
         lkby_status kb_status;  // The status of the event, if the key is pressed/relased
     } lkby_trans_key;
+
+    lkby_user_id user_id;   // The id of an active user.
 };
 
 
 static inline void lkby_init(union lkby_info *src)
 {
     (void)memset(src, 0x0, sizeof(union lkby_info));
-}
-
-static inline void lkby_trans_key_free(union lkby_info *src)
-{
-    free(LKBY_INFO_KEYBOARD_NAME(src, lkby_trans_key));
 }
 
 static inline void lkby_keyboard_free(union lkby_info *src)

@@ -87,10 +87,10 @@ static char *identified_keyboard(const char *device)
 
         len = 0;
         while (*(ev_loc + len++) != '\n');
-        ev = (char *) malloc(sizeof(char) * (len + 1));
+        ev = (char *) malloc(sizeof(char) * (len - 1));
         if (NULL == ev) return NULL;
-        (void)memcpy(ev, ev_loc, len);
-        ev[len - 1] = '\0';
+        (void)memset(ev, 0x0, len - 1);
+        (void)memcpy(ev, ev_loc, len - 2);
         return ev;
     }
 
@@ -124,15 +124,17 @@ static char *retrieve_keyboard_name(const char *device)
 static inline void store_kb_to_transmit_queue(const char *kb_event, const char *kb_name) 
 {
     // build the data.
-    union lkby_info kb_transmit_info;
+    union lkby_info kb_scheduling_info;
+    lkby_init(&kb_scheduling_info);
+
     // store the information needed to schedule the keyboard.
-    LKBY_INFO_KEYBOARD_NAME(&kb_transmit_info, lkby_keyboard) = (char *) kb_name;
-    LKBY_INFO_KEYBOARD_EVENT(&kb_transmit_info)               = (char *) kb_event; 
+    LKBY_INFO_KEYBOARD_NAME(&kb_scheduling_info, lkby_keyboard) = (char *) kb_name;
+    LKBY_INFO_KEYBOARD_EVENT(&kb_scheduling_info)               = (char *) kb_event; 
 
     // add the new schedule info into the queue.
-    lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &kb_transmit_info);
+    lkbyqueue_enqueue(&LKBYQUEUE(&g_keyboard_queue), &kb_scheduling_info);
     // inform the scheduler thread that there is a new keyboard.
-    (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
+    (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
 static void read_keyboards(FILE *devices)
@@ -161,16 +163,16 @@ void *lkby_start_discovery(void *none)
     FILE *devices; // pointer to the device file. 
 
     // start the keyboard identification process
-    while(1) {
+    //while(1) {
         devices = fopen(KB_DEVICES_LOC, "r");
         if (NULL == devices) {
-            (void)sleep(RETRY);
-            continue;
+            //(void)sleep(RETRY);
+            //continue;
         }
         read_keyboards(devices);
         (void)fclose(devices);
-        (void)sleep(REDISCOVER);
-    }
+        //(void)sleep(REDISCOVER);
+    //}
 
     return NULL;
 }
