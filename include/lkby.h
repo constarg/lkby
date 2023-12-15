@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <memory.h>
 #include <malloc.h>
+#include <asm/types.h>
 
 #define MAX_CONNECTIONS 10
 
@@ -25,7 +26,7 @@
  * keyboard.
  */
 #define LKBY_INFO_KEYBOARD_CODE(lkby_info) \
-    (lkby_info)->lkby_trans_key.kb_status
+    (lkby_info)->lkby_trans_key.kb_code
 
 /**
  * This macro retrieves the status of a key
@@ -33,6 +34,11 @@
 #define LKBY_INFO_KEYBOARD_STATUS(lkby_info) \
     (lkby_info)->lkby_trans_key.kb_status
 
+/**
+ * This macro retrieves the user_id.
+*/
+#define LKBY_INFO_KEYBOARD_USER_ID(lkby_info) \
+    (lkby_info)->user_id
 
 typedef int8_t lkby_status;
 typedef int    lkby_user_id; // This integer coresponds to the socker fd of the a user.
@@ -57,7 +63,7 @@ union lkby_info
     struct
     {
         char       *kb_name;    // The name of the keyboard that occure an event.
-        char       *kb_code;    // The code of the pressed/released key.
+        __u16      *kb_code;    // The code of the pressed/released key.
         lkby_status kb_status;  // The status of the event, if the key is pressed/relased
     } lkby_trans_key;
 

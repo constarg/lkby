@@ -23,6 +23,10 @@ int main(int argc, char *argv[])
 {
     if (lkbyqueue_sync_init(&g_keyboard_queue) != 0) return -1;
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
+    if (lkbyqueue_sync_init(&g_user_queue) != 0) return -1;
+
+    union lkby_info client_info;
+    lkby_init(&client_info);
 
     /**
      * Service related variables.
@@ -43,15 +47,15 @@ int main(int argc, char *argv[])
     // Check if there is an already active thread that discover keyboards.
     if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) return -1;
     if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
+    //if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
 
     // Detach each thread from the main thread.
     // pthread_detach(discov_th);
     // pthread_detach(sched_th);
 
-    pthread_join(discov_th, NULL);
-    pthread_join(sched_th, NULL);
+    // pthread_join(discov_th, NULL);
+    // pthread_join(sched_th, NULL);
 
-    /*
     // If any step excpet the listening/accept part failed, retry after 5 seconds again.
     while (1) {
         // initialize the sockaddr
@@ -100,33 +104,20 @@ int main(int argc, char *argv[])
             }
             conn_errors = 0;
 
-            // Check if there is an already active thread that discover keyboards.
-            if (0 != pthread_tryjoin_np(discov_th, NULL)) {
-                if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) continue;
+            // If the code reach this point, then the client connection is changed to established.
+            // Set the new user id.
+            LKBY_INFO_KEYBOARD_USER_ID(&client_info) = client_fd;
+            // Block the semaphore. (BUT WAIT, the transmitter may try to access this queue).
+            if (true != lkbyqueue_isempty(&LKBYQUEUE(&g_user_queue))) {
+                if (0 != sem_wait(&LKBYQUEUE_SEM(&g_user_queue))) continue;
             }
-
-            // Cancel the thread in order to update the clients.
-            // TODO - change this. Don't use cancel to update the client list, instead use a different queue, to update dynamicaly the clients.
-            // Create again the same thread with updated clients.
-            //if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, (void *) g_active_clients)) continue;
-
-            // TODO - DONE - After the connection established, find the available kayboards and send the information to the client.
-            // TODO - DONE - don't make more than the necessary threads. If more than one client has connected then 
-            // TODO - DONE - pass on the trasmitter a list with all the active client sockets. If the transmitter is already active
-            // then kill him and after than recreate the thread with the updated list of clients.
-            // TODO - DONE - discover keyboards.
-            // TODO - DONE - schedule the new keyboards.
-            // TODO - DONE - transmit the keystrokes to the other process.
+            // Put the new client in the queue.
+            lkbyqueue_enqueue(&LKBYQUEUE(&g_user_queue), &client_info);
+            (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
         }
         close(server_fd);
         conn_errors = 0; // Reset occured errors.
-    }*/
-
-    // TODO - [SECURITY]
-    /**
-     * For the security part of the program thw user required to give a passphrashe that is stored in
-     * a specific file path and only root can access it. 
-    */
+    }
 
     return 0;
 }

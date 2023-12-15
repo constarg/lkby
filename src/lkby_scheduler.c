@@ -83,7 +83,6 @@ static inline int add_active_kb(const struct active_kb *src)
  **/
 static int remove_active_kb(struct active_kb *src)
 {
-    printf("%s\n", LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(src), lkby_keyboard));
     int index = -1;
     for (int i = 0; i < g_active_next; i++) {
         if (!strcmp(
@@ -93,10 +92,7 @@ static int remove_active_kb(struct active_kb *src)
             index = i;
         }
     }
-    if (-1 == index) {
-        printf("ERROR\n");
-        return -1;
-    }
+    if (-1 == index) return -1;
     g_active_kbs[index] = 0x0;
 
     // move all the elements.
@@ -133,7 +129,7 @@ static inline void clean_threads(void)
 {
     for (int i = 0; i < g_active_next; i++) {
         if (0 == pthread_tryjoin_np(LKBYACTIVE_KB_THREAD(g_active_kbs[i]), NULL)) {
-            remove_active_kb(g_active_kbs[i]);
+            if (-1 == remove_active_kb(g_active_kbs[i])) continue;
             --i; // because we remove a thread, go back one to not skip any thread.
         }
     }
@@ -214,8 +210,8 @@ static void *keyboard_routine(void *src)
             // Fill the members.
             printf("%x\n", kb_event_buffer.code);
             LKBY_INFO_KEYBOARD_NAME(&transmit_info, lkby_trans_key) = LKBY_INFO_KEYBOARD_NAME(&keyboard, lkby_keyboard);
-            LKBY_INFO_KEYBOARD_CODE(&transmit_info)   = kb_event_buffer.code;
-            LKBY_INFO_KEYBOARD_STATUS(&transmit_info) = kb_event_buffer.value;
+            LKBY_INFO_KEYBOARD_CODE(&transmit_info)                 = kb_event_buffer.code;
+            LKBY_INFO_KEYBOARD_STATUS(&transmit_info)               = kb_event_buffer.value;
 
             if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
@@ -238,7 +234,7 @@ failed_label:
 static void scheduler_cleanup_handler(void *none)
 {
     for (int i = 0; i < g_active_next; i++) {
-        remove_active_kb(g_active_kbs[i]);
+        if (-1 == remove_active_kb(g_active_kbs[i])) continue;
         --i;
     }
     free(g_active_kbs);

@@ -86,18 +86,25 @@ void *lkby_start_transmitter(void *none)
 
     while (true) {
         if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) continue;
-        (void)sem_trywait(&LKBYQUEUE_SEM(&g_transmit_queue));
         remove_inactive_users();
-        while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_user_queue))) {
-            lkbyqueue_dequeue(&current_user, &LKBYQUEUE(&g_user_queue));
-            if (!is_user_active(current_user.user_id)) continue;
-            add_user(current_user.user_id);
+
+        // Are there new users?
+        if (true != lkbyqueue_isempty(&LKBYQUEUE(&g_user_queue))) {
+            // OK, wait for the server to fill proceed with the queue.
+            if (0 != sem_wait(&LKBYQUEUE_SEM(&g_user_queue))) continue;
+            // Then, consume all the users that has been added in the queue.
+            while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_user_queue))) {
+                lkbyqueue_dequeue(&current_user, &LKBYQUEUE(&g_user_queue));
+                if (!is_user_active(LKBY_INFO_KEYBOARD_USER_ID(&current_user))) continue;
+                add_user(LKBY_INFO_KEYBOARD_USER_ID(&current_user));
+            }
+            // After that, notify the server, that the clients has been consumed.
+            (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
         }
 
         while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_transmit_queue))) {
             lkbyqueue_dequeue(&trasmit_data, &LKBYQUEUE(&g_transmit_queue));
             send_data_to_users(&trasmit_data);
         }
-
     }
 }
