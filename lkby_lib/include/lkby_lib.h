@@ -1,0 +1,90 @@
+#ifndef LKBY_LIB_H
+#define LKBY_LIB_H
+
+#include <stdbool.h>
+
+#include "lkby.h"
+
+/**
+ * !The macros below are public and the purpose of 
+ * !existance is to make the user who is using this
+ * !library more comfortable with the whole experience.
+*/
+
+/**
+ * Simplified versions of the server side macros
+ * that retrieves the name, code and status of the
+ * current info that the server sent.
+*/
+/**
+ * Get the name of the keyboard which occure the 
+ * keypress/release event.
+*/
+#define LKBY_KEYBOARD_NAME(lkby_info) \
+    LKBY_INFO_KEYBOARD_NAME(lkby_info, lkby_keyboard)
+
+/**
+ * Get the code of the key pressed/released.
+*/
+#define LKBY_KEYBOARD_CODE(lkby_info) \
+    LKBY_INFO_KEYBOARD_CODE(lkby_info)
+
+/**
+ * Get the status of the keyboard, pressed or released.
+*/
+#define LKBY_KEYBOARD_STATUS(lkby_info) \
+    LKBY_INFO_KEYBOARD_STATUS(lkby_info)
+
+/**
+ * The value of the keyboard status if the key is pressed.
+*/
+#define LKBY_KEY_PRESSED    0x0
+/**
+ * The value of the keyboard status if the key is released.
+*/
+#define LKBY_KEY_RELEASED   0x1
+/**
+ * The value of the keybarod status if the key is autorepeat.
+*/
+#define LKBY_KEY_AUTOREPEAT 0x2
+
+/**
+ * A generic way to express the 3 next macros.
+*/
+#define LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, value) \
+    (LKBY_INFO_KEYBOARD_STATUS == value)? true:false
+
+/**
+ * Check the current value of the keyboard status to determine
+ * if it was key press.
+*/
+#define LKBY_IS_KEY_PRESSED(lkby_info) \
+    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_PRESSED)
+
+/**
+ * Check the current value of the keyboard status to determine
+ * if it was key release.
+*/
+#define LKBY_IS_KEY_RELEASE(lkby_info) \
+    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_RELEASED)
+
+/**
+ * Check the current value of the keybaord status to determine
+ * if it was key autorepeat.
+*/
+#define LKBY_IS_KEY_AUTOREPEAT(lkby_info) \
+    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_AUTOREPEAT)
+
+/**
+ * This function establish a new connection to the lkby server. Also,
+ * calls the routine, keystroke_callback, for every keystroke the server
+ * sents.
+ * 
+ * @param keystroke_callback The routine to call when lkby server sent a new keystroke.
+ * @return Nothing on success, cause it put the thread to sleep status (until a new keystroke arrive). 
+ * In case an error occured, -1 is returned.
+*/
+extern int establish_connection(void (*keystroke_callback)(lkby_info *));
+
+
+#endif
