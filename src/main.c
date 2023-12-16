@@ -46,8 +46,8 @@ int main(void)
     struct sockaddr_un client_addr;    // The server address (unix file).
 
     // Check if there is an already active thread that discover keyboards.
-    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) return -1;
-    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
+    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL))     return -1;
+    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL))      return -1;
     if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
 
     // Detach each thread from the main thread.
@@ -88,21 +88,11 @@ int main(void)
             // Listen for a new connection.
             // If 3 consecutives errors have been occured, then reactivate the whole server.
             if (3 == conn_errors) break; // If more than one error has occured, then reset the whole server.
-            if (-1 == listen(server_fd, MAX_CONNECTIONS)) {
-                ++conn_errors; // increase occured errors.
-                continue;
-            }
+            if (-1 == listen(server_fd, MAX_CONNECTIONS)) goto lkby_failed_to_establish_conn_label;
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &len);
             len = sizeof(client_addr);
-            if (-1 == client_fd) {
-                ++conn_errors;
-                continue;
-            }
-            if (-1 == getpeername(client_fd, (struct sockaddr *) &client_addr, &len)) {
-                close(client_fd);
-                ++conn_errors;
-                continue;
-            }
+            if (-1 == client_fd) goto lkby_failed_to_establish_conn_label;
+            if (-1 == getpeername(client_fd, (struct sockaddr *) &client_addr, &len)) goto lkby_failed_to_establish_conn_label;
             conn_errors = 0;
 
             // If the code reach this point, then the client connection is changed to established.
@@ -115,6 +105,12 @@ int main(void)
             // Put the new client in the queue.
             lkbyqueue_enqueue(&LKBYQUEUE(&g_user_queue), &client_info);
             (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
+
+            continue;
+lkby_failed_to_establish_conn_label:
+            (void)close(client_fd);
+            ++conn_errors;
+
         }
         close(server_fd);
         conn_errors = 0; // Reset occured errors.
