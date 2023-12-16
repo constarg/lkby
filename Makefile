@@ -6,11 +6,11 @@ GCC = gcc
 MAKE = make
 libraries = -lpthread
 
-c_production_flags = -O3 -Wall -Werror -Wpedantic
-c_debug_flags = -g -Wall -Wpedantic 
+c_production_flags = -O3 -Wall -Werror -Wpedantic -Wnull-dereference -Wextra -Wunreachable-code -Wpointer-arith -Wmissing-include-dirs -Wstrict-prototypes -Wunused-result -Waggregate-return -Wredundant-decls
+c_debug_flags = -g -Wall -Wpedantic -Wnull-dereference -Wextra -Wunreachable-code -Wpointer-arith -Wmissing-include-dirs -Wstrict-prototypes -Wunused-result -Waggregate-return -Wredundant-decls 
 c_features = -D _GNU_SOURCE
 
-all: dir_make ${object_files}
+all: dir_make ${object_files} 
 	${GCC} ${c_features} ${c__production_flags} ${header_loc} ./src/main.c ${object_files} ${libraries} -o ./bin/lkby
 	cd ./lkby_lib/ && ${MAKE}
 

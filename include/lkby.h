@@ -63,7 +63,7 @@ union lkby_info
     struct
     {
         char       *kb_name;    // The name of the keyboard that occure an event.
-        __u16      *kb_code;    // The code of the pressed/released key.
+        __u16       kb_code;    // The code of the pressed/released key.
         lkby_status kb_status;  // The status of the event, if the key is pressed/relased
     } lkby_trans_key;
 

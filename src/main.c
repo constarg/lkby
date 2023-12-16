@@ -19,7 +19,7 @@ struct lkbyqueue_sync g_keyboard_queue; // The queue used to schedule data.
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
 struct lkbyqueue_sync g_user_queue;     // The queue used to inform tansmitter for new users.
 
-int main(int argc, char *argv[])
+int main(void)
 {
     if (lkbyqueue_sync_init(&g_keyboard_queue) != 0) return -1;
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;

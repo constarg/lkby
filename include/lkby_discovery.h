@@ -11,7 +11,7 @@ extern struct lkbyqueue_sync g_keyboard_queue; // Declared in main.
  * This function is responsible to do the job of the
  * thread that searches for new keyboards.
  */
-extern void *lkby_start_discovery(void *none);
+extern void *lkby_start_discovery(void *none __attribute__((unused)));
 
 
 #endif

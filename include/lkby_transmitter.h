@@ -6,6 +6,6 @@
 extern struct lkbyqueue_sync g_user_queue; // Declared in main.
 
 
-extern void *lkby_start_transmitter(void *none);
+extern void *lkby_start_transmitter(void *none __attribute__((unused)));
 
 #endif

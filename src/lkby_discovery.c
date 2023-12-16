@@ -158,7 +158,7 @@ static void read_keyboards(FILE *devices)
     (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
-void *lkby_start_discovery(void *none)
+void *lkby_start_discovery(void *none  __attribute__((unused)))
 {
     FILE *devices; // pointer to the device file. 
 

@@ -1,6 +1,6 @@
 
 
-int establish_connection(void (*keystroke_callback)(lkby_info *))
+int establish_connection(void (*keystroke_callback)(const lkby_info *restrict src))
 {
-    
+
 }

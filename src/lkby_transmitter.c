@@ -10,7 +10,7 @@
 
 static lkby_user_id active_users[MAX_CONNECTIONS]; // The currently active users.
 
-static inline void active_users_init()
+static inline void active_users_init(void)
 {
     (void)memset(active_users, 0x0, sizeof(lkby_user_id) * MAX_CONNECTIONS);
 }
@@ -59,7 +59,7 @@ static inline bool is_user_active(lkby_user_id src)
 /**
  * This functino removes any inactive user.
 */
-static inline void remove_inactive_users()
+static inline void remove_inactive_users(void)
 {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (!is_user_active(active_users[i])) {
@@ -79,7 +79,7 @@ static inline void send_data_to_users(union lkby_info *src)
     }
 }
 
-void *lkby_start_transmitter(void *none)
+void *lkby_start_transmitter(void *none  __attribute__((unused)))
 {
     union lkby_info trasmit_data;
     union lkby_info current_user;

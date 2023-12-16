@@ -21,7 +21,7 @@
 #define LKBYACTIVE_KB_THREAD(act) \
     (act)->kb_thread
 
-typedef int lkby_index; // The last index in which the last keyboard was inserted.
+typedef size_t lkby_index; // The last index in which the last keyboard was inserted.
 
 struct active_kb 
 {
@@ -84,7 +84,7 @@ static inline int add_active_kb(const struct active_kb *src)
 static int remove_active_kb(struct active_kb *src)
 {
     int index = -1;
-    for (int i = 0; i < g_active_next; i++) {
+    for (size_t i = 0; i < g_active_next; i++) {
         if (!strcmp(
             LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(g_active_kbs[i]), lkby_keyboard),
             LKBY_INFO_KEYBOARD_NAME(&LKBYACTIVE_KB(src), lkby_keyboard)
@@ -96,7 +96,7 @@ static int remove_active_kb(struct active_kb *src)
     g_active_kbs[index] = 0x0;
 
     // move all the elements.
-    for (int i = index; i < g_active_next; i++) {
+    for (size_t i = index; i < g_active_next; i++) {
         g_active_kbs[i] = g_active_kbs[i + 1];
     }
     // free the keyboard info.
@@ -127,7 +127,7 @@ static int remove_active_kb(struct active_kb *src)
  */
 static inline void clean_threads(void)
 {
-    for (int i = 0; i < g_active_next; i++) {
+    for (size_t i = 0; i < g_active_next; i++) {
         if (0 == pthread_tryjoin_np(LKBYACTIVE_KB_THREAD(g_active_kbs[i]), NULL)) {
             if (-1 == remove_active_kb(g_active_kbs[i])) continue;
             --i; // because we remove a thread, go back one to not skip any thread.
@@ -146,7 +146,7 @@ static inline void clean_threads(void)
 */
 static inline bool is_keyboard_active(union lkby_info *src) 
 {
-    for (int i = 0; i < g_active_next; i++) {
+    for (size_t i = 0; i < g_active_next; i++) {
         // Check if the given keyboard much any currently active keyboard.
         if (!strcmp(
             LKBY_INFO_KEYBOARD_EVENT(src),
@@ -231,16 +231,16 @@ failed_label:
  * This function clear up the data that the lkby_start_scheduler
  * thread may left behind.
 */
-static void scheduler_cleanup_handler(void *none)
+static void scheduler_cleanup_handler(void *none __attribute__((unused)))
 {
-    for (int i = 0; i < g_active_next; i++) {
+    for (size_t i = 0; i < g_active_next; i++) {
         if (-1 == remove_active_kb(g_active_kbs[i])) continue;
         --i;
     }
     free(g_active_kbs);
 }
 
-void *lkby_start_scheduler(void *none)
+void *lkby_start_scheduler(void *none __attribute__((unused)))
 {
     init_active_kbs();
     pthread_cleanup_push(scheduler_cleanup_handler, NULL);

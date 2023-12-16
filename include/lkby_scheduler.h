@@ -9,7 +9,7 @@ extern struct lkbyqueue_sync g_transmit_queue; // Declared in main.
 /**
  * 
  */
-extern void *lkby_start_scheduler(void *none);
+extern void *lkby_start_scheduler(void *none __attribute__((unused)));
 
 
 #endif
