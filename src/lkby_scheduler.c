@@ -81,7 +81,7 @@ static inline int add_active_kb(const struct active_kb *src)
  * 
  * @param src The keyboard to remove.
  **/
-static int remove_active_kb(struct active_kb *src)
+static int remove_active_kb(struct active_kb *restrict src)
 {
     int index = -1;
     for (size_t i = 0; i < g_active_next; i++) {
@@ -144,7 +144,7 @@ static inline void clean_threads(void)
  * 
  * @param src The information about the keyboard to check.
 */
-static inline bool is_keyboard_active(union lkby_info *src) 
+static inline bool is_keyboard_active(const union lkby_info *src) 
 {
     for (size_t i = 0; i < g_active_next; i++) {
         // Check if the given keyboard much any currently active keyboard.
@@ -199,6 +199,7 @@ static void *keyboard_routine(void *src)
     // Open the eventX file of the keyboard.
     event_fd = open(absolute_path_to_event, O_RDONLY);
     if (-1 == event_fd) goto failed_label;
+    printf("%s\n", absolute_path_to_event);
 
     // Start monitor the keyboard.
     while (true) {
@@ -208,21 +209,20 @@ static void *keyboard_routine(void *src)
             // Build info for the transmitter.
             lkby_init(&transmit_info);
             // Fill the members.
-            printf("%x\n", kb_event_buffer.code);
             LKBY_INFO_KEYBOARD_NAME(&transmit_info, lkby_trans_key) = LKBY_INFO_KEYBOARD_NAME(&keyboard, lkby_keyboard);
             LKBY_INFO_KEYBOARD_CODE(&transmit_info)                 = kb_event_buffer.code;
             LKBY_INFO_KEYBOARD_STATUS(&transmit_info)               = kb_event_buffer.value;
 
-            if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
+            //if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
             // inform the transmitter thread that there is a new event.
-            (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
+            //(void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
         }
     }
 
-
 failed_label:
     free(absolute_path_to_event);
+    (void)close(event_fd);
     pthread_cleanup_pop(1);
     return NULL;
 }
@@ -270,14 +270,15 @@ void *lkby_start_scheduler(void *none __attribute__((unused)))
             
             active_kb_init(ac_kb);
             (void)memcpy(&ac_kb->kb, kb, sizeof(union lkby_info));
+
             add_active_kb((const struct active_kb *) ac_kb);
 
             // Create the coresponded thread.
             if (0 != pthread_create(&ac_kb->kb_thread, NULL, keyboard_routine, (void *) kb)) continue;
             pthread_detach(ac_kb->kb_thread);
         }
-    //}
-    
+    //}    
+
     pthread_cleanup_pop(1);
     return NULL;
 }

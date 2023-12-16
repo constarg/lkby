@@ -71,11 +71,11 @@ static inline void remove_inactive_users(void)
 /**
  * This function sends the data to the active users.
 */
-static inline void send_data_to_users(union lkby_info *src) 
+static inline void send_data_to_users(const union lkby_info *src) 
 {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (0 == active_users[i]) continue;
-        if (-1 == send(active_users[i], &src, sizeof(union lkby_info), MSG_NOSIGNAL)) continue;
+        if (-1 == send(active_users[i], (const void *) &src, sizeof(union lkby_info), MSG_NOSIGNAL)) continue;
     }
 }
 

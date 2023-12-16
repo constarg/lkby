@@ -59,7 +59,7 @@ static char *read_device(FILE *devices)
  * @param device The device to check.
  * @returns a pointer to the eventX file if the device is keyboard or NULL otherwise.
  */
-static char *identified_keyboard(const char *device) 
+static char *identified_keyboard(const char *restrict device) 
 {
     char *ev_loc = strstr(device, "EV=");
     if (NULL == ev_loc) return NULL;
@@ -121,7 +121,7 @@ static char *retrieve_keyboard_name(const char *device)
  * discovered keyboard into the queue of the scheduler
  * thread.
  */
-static inline void store_kb_to_transmit_queue(const char *kb_event, const char *kb_name) 
+static inline void store_kb_to_transmit_queue(const char *restrict kb_event, const char *restrict kb_name) 
 {
     // build the data.
     union lkby_info kb_scheduling_info;
@@ -158,7 +158,7 @@ static void read_keyboards(FILE *devices)
     (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
-void *lkby_start_discovery(void *none  __attribute__((unused)))
+void *lkby_start_discovery(void *none __attribute__((unused)))
 {
     FILE *devices; // pointer to the device file. 
 

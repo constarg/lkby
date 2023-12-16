@@ -1,7 +1,7 @@
 #include "lkby_queue.h"
 #include <stdbool.h>
 
-void lkbyqueue_dequeue(union lkby_info *dst, struct lkbyqueue *queue)
+void lkbyqueue_dequeue(union lkby_info *restrict dst, struct lkbyqueue *restrict queue)
 {
     if (NULL == queue->front) return;
     // save the pointer to the data to be removed.
@@ -14,13 +14,13 @@ void lkbyqueue_dequeue(union lkby_info *dst, struct lkbyqueue *queue)
     free(tmp);
 }
 
-bool lkbyqueue_isempty(struct lkbyqueue *queue)
+bool lkbyqueue_isempty(const struct lkbyqueue *queue)
 {
     if (NULL == queue->front) return true;
     return false;
 }
 
-void lkbyqueue_enqueue(struct lkbyqueue *queue, const union lkby_info *src)
+void lkbyqueue_enqueue(struct lkbyqueue *restrict queue, const union lkby_info *restrict src)
 {
     // create the new node.
     struct lkbyqueue_node *new_node = (struct lkbyqueue_node *) malloc(sizeof(struct lkbyqueue_node));

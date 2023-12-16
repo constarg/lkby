@@ -7,6 +7,7 @@
 
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
+#include "lkby_transmitter.h"
 #include "lkby_queue.h"
 #include "lkby.h"
 
@@ -31,9 +32,9 @@ int main(void)
     /**
      * Service related variables.
     */
-    pthread_t transmit_th = 0;         // The transmitter thread.
     pthread_t sched_th    = 0;         // The scheduler thread.
     pthread_t discov_th   = 0;         // The discovery thread.
+    pthread_t transmit_th = 0;         // The transmitter thread.
     /**
      * Communication related variables. 
     */
@@ -47,11 +48,11 @@ int main(void)
     // Check if there is an already active thread that discover keyboards.
     if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) return -1;
     if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
-    //if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
+    if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
 
     // Detach each thread from the main thread.
-    // pthread_detach(discov_th);
-    // pthread_detach(sched_th);
+    //pthread_detach(discov_th);
+    //pthread_detach(sched_th);
 
     // pthread_join(discov_th, NULL);
     // pthread_join(sched_th, NULL);

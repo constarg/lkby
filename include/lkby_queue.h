@@ -68,14 +68,14 @@ static inline int lkbyqueue_sync_init(struct lkbyqueue_sync *s_queue)
  * @param dst Where the removed data will be placed.
  * @param queue The queue of interest.
  */
-void lkbyqueue_dequeue(union lkby_info *dst, struct lkbyqueue *queue);
+void lkbyqueue_dequeue(union lkby_info *restrict dst, struct lkbyqueue *restrict queue);
 
 /**
  * This function check whether the queue is empty or not.
  * @param queue The queue to check.
  * @returns True if the queue is empty, otherwise false.
 */
-bool lkbyqueue_isempty(struct lkbyqueue *queue); 
+bool lkbyqueue_isempty(const struct lkbyqueue *queue); 
 
 /**
  * This functiono add an element into the queue. After the call of this
@@ -84,6 +84,6 @@ bool lkbyqueue_isempty(struct lkbyqueue *queue);
  * @param queue The queue of interest.
  * @param src The data to store into the queue.
  */
-void lkbyqueue_enqueue(struct lkbyqueue *queue, const union lkby_info *src);
+void lkbyqueue_enqueue(struct lkbyqueue *restrict queue, const union lkby_info *restrict src);
 
 #endif
