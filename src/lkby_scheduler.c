@@ -182,7 +182,7 @@ static void *keyboard_routine(void *src)
     pthread_cleanup_push(keyboard_routine_cleanup_handler, src);
 
     union lkby_info keyboard;
-    memcpy(&keyboard, src, sizeof(union lkby_info));
+    (void)memcpy(&keyboard, src, sizeof(union lkby_info));
 
     union lkby_info transmit_info;
     struct input_event kb_event_buffer;
@@ -270,11 +270,11 @@ void *lkby_start_scheduler(void *none __attribute__((unused)))
             active_kb_init(ac_kb);
             (void)memcpy(&ac_kb->kb, kb, sizeof(union lkby_info));
 
-            add_active_kb((const struct active_kb *) ac_kb);
+            if (0 != add_active_kb((const struct active_kb *) ac_kb)) goto lkby_scheduler_failed_label;
 
             // Create the coresponded thread.
             if (0 != pthread_create(&ac_kb->kb_thread, NULL, keyboard_routine, (void *) kb)) goto lkby_scheduler_failed_label;
-            //(void)pthread_detach(ac_kb->kb_thread);
+            (void)pthread_detach(ac_kb->kb_thread);
 
             continue; // ! DO NOT GO TO THE ARREA OF ERRORS. (label below).
             // TODO - this error handling need more tests.

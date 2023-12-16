@@ -48,17 +48,16 @@ int main(void)
     // Check if there is an already active thread that discover keyboards.
     if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL)) return -1;
     if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL)) return -1;
-    //if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
+    if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
 
     // Detach each thread from the main thread.
     //pthread_detach(discov_th);
     //pthread_detach(sched_th);
 
-    pthread_join(discov_th, NULL);
-    pthread_join(sched_th, NULL);
+    // pthread_join(discov_th, NULL);
+    // pthread_join(sched_th, NULL);
 
     // If any step excpet the listening/accept part failed, retry after 5 seconds again.
-    /*
     while (1) {
         // initialize the sockaddr
         (void)memset(&server_addr, 0x0, sizeof(struct sockaddr_un));
@@ -119,7 +118,7 @@ int main(void)
         }
         close(server_fd);
         conn_errors = 0; // Reset occured errors.
-    }*/
+    }
 
     return 0;
 }
