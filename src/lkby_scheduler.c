@@ -45,6 +45,7 @@ static inline void active_kb_init(struct active_kb *src)
 
 /**
  * This function initializes the list of active keyboards.
+ * @return 0 on success, otherwise -1.
  */
 static inline int init_active_kbs(void) 
 {
@@ -61,6 +62,7 @@ static inline int init_active_kbs(void)
  * of active keyboards.
  *
  * @param src The keyboard to be added.
+ * @return 0 on success, otherwise -1.
  **/
 static inline int add_active_kb(const struct active_kb *src)
 {
@@ -80,6 +82,7 @@ static inline int add_active_kb(const struct active_kb *src)
  * active from the keyboard active list.
  * 
  * @param src The keyboard to remove.
+ * @return 0 on success, otherwise -1.
  **/
 static int remove_active_kb(struct active_kb *restrict src)
 {
@@ -143,6 +146,7 @@ static inline void clean_threads(void)
  * responsible for.
  * 
  * @param src The information about the keyboard to check.
+ * @return true if the keyboard is active, false otherwise.
 */
 static inline bool is_keyboard_active(const union lkby_info *src) 
 {
@@ -163,6 +167,8 @@ static inline bool is_keyboard_active(const union lkby_info *src)
  * This routine is used to cleanup the used memory
  * that may not be freed properly during the execution
  * of keyboard_routine.
+ * 
+ * @param src The keyboard which had allocated memory.
 */
 static void keyboard_routine_cleanup_handler(void *src)
 {
