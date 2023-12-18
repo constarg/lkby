@@ -11,7 +11,7 @@ c_debug_flags = -g -Wall -Wpedantic -Wnull-dereference -Wextra -Wunreachable-cod
 c_features = -D _GNU_SOURCE
 
 all: dir_make ${object_files} 
-	${GCC} ${c_features} ${c__production_flags} ${header_loc} ./src/main.c ${object_files} ${libraries} -o ./bin/lkby
+	${GCC} ${c_features} ${c_production_flags} ${header_loc} ./src/main.c ${object_files} ${libraries} -o ./bin/lkby
 	cd ./lkby_lib/ && ${MAKE}
 
 debug: dir_make ${object_files_debug}
