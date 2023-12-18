@@ -1,9 +1,9 @@
-header_loc = -I ./include/
+header_loc = -I ./include/ -I ../include/
 
 GCC = gcc
 
-c_flags = -Wall
-c_debug_flags = -g -Wall
+c_flags = -Wall -Wpedantic -Wnull-dereference -Wextra -Wunreachable-code -Wpointer-arith -Wmissing-include-dirs -Wstrict-prototypes -Wunused-result -Waggregate-return -Wredundant-decls
+c_debug_flags = -g -Wall -Wpedantic -Wnull-dereference -Wextra -Wunreachable-code -Wpointer-arith -Wmissing-include-dirs -Wstrict-prototypes -Wunused-result -Waggregate-return -Wredundant-decls
 c_features = -D _GNU_SOURCE
 
 all: dir_make

@@ -53,7 +53,7 @@ static inline int init_active_kbs(void)
     if (NULL == g_active_kbs) {
         return -1;
     }
-    memset(g_active_kbs, 0x0, sizeof(struct active_kb *) * g_s_active_kbs);
+    (void)memset(g_active_kbs, 0x0, sizeof(struct active_kb *) * g_s_active_kbs);
     return 0;
 }
 
@@ -219,6 +219,7 @@ static void *keyboard_routine(void *src)
             LKBY_INFO_KEYBOARD_CODE(&transmit_info)                 = kb_event_buffer.code;
             LKBY_INFO_KEYBOARD_STATUS(&transmit_info)               = kb_event_buffer.value;
 
+            // TODO - try wait and if there is an actaul reason to wait, check if the queue is empty, then if it is not, wait.
             //if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
             // inform the transmitter thread that there is a new event.

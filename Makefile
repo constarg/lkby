@@ -16,7 +16,8 @@ all: dir_make ${object_files}
 
 debug: dir_make ${object_files_debug}
 	${GCC} ${c_features} ${c_debug_flags} ${header_loc} ./src/main.c ${object_files_debug} ${libraries} -o ./bin/lkby_debug
-	
+	cd ./lkby_lib/ && ${MAKE}
+
 ./build/lkby_scheduler.o: ./src/lkby_scheduler.c
 	${GCC} ${c_features} ${c_production_flags} ${header_loc} -c ./src/lkby_scheduler.c ${libraries} -o ./build/lkby_scheduler.o
 

@@ -24,7 +24,7 @@ int main(void)
 {
     if (lkbyqueue_sync_init(&g_keyboard_queue) != 0) return -1;
     if (lkbyqueue_sync_init(&g_transmit_queue) != 0) return -1;
-    if (lkbyqueue_sync_init(&g_user_queue) != 0) return -1;
+    if (lkbyqueue_sync_init(&g_user_queue)     != 0) return -1;
 
     union lkby_info client_info;
     lkby_init(&client_info);
@@ -38,16 +38,16 @@ int main(void)
     /**
      * Communication related variables. 
     */
-    int server_fd = 0;                 // Server socket file descriptor.
-    int client_fd = 0;                 // Client socket file descriptor.
+    int server_fd   = 0;               // Server socket file descriptor.
+    int client_fd   = 0;               // Client socket file descriptor.
     int conn_errors = 0;               // The occured errors.
-    socklen_t len = 0;                 // The length of the server addr.
+    socklen_t len   = 0;               // The length of the server addr.
     struct sockaddr_un server_addr;    // The server address (unix file).
     struct sockaddr_un client_addr;    // The server address (unix file).
 
     // Check if there is an already active thread that discover keyboards.
-    if (0 != pthread_create(&discov_th, NULL, &lkby_start_discovery, NULL))     return -1;
-    if (0 != pthread_create(&sched_th, NULL, &lkby_start_scheduler, NULL))      return -1;
+    if (0 != pthread_create(&discov_th,   NULL, &lkby_start_discovery,   NULL)) return -1;
+    if (0 != pthread_create(&sched_th,    NULL, &lkby_start_scheduler,   NULL)) return -1;
     if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
 
     // Detach each thread from the main thread.

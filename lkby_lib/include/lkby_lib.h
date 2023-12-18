@@ -11,6 +11,8 @@
  * !library more comfortable with the whole experience.
 */
 
+typedef union lkby_info lkby_info;
+
 /**
  * Simplified versions of the server side macros
  * that retrieves the name, code and status of the
