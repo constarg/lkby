@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 #include "lkby_transmitter.h"
 #include "lkby_scheduler.h"
@@ -35,9 +36,11 @@ static inline void add_user(lkby_user_id src)
 */
 static inline void remove_user(lkby_user_id src) 
 {
+    (void)close(src);
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (active_users[i] == src) {
             active_users[i] = 0x0;
+            return;
         }
     }
 }
@@ -49,7 +52,7 @@ static inline void remove_user(lkby_user_id src)
 static inline bool is_user_active(lkby_user_id src) 
 {
     unsigned char tmp_buff = 0x0;
-    if (-1 == send(src, &tmp_buff, sizeof(tmp_buff), MSG_NOSIGNAL)) {
+    if (-1 == send(src, &tmp_buff, sizeof(tmp_buff), 0)) {
         remove_user(src);
         return false;
     }
@@ -75,7 +78,7 @@ static inline void send_data_to_users(const union lkby_info *src)
 {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (0 == active_users[i]) continue;
-        if (-1 == send(active_users[i], (const void *) &src, sizeof(union lkby_info), MSG_NOSIGNAL)) continue;
+        if (-1 == send(active_users[i], (const void *) src, sizeof(union lkby_info), 0)) continue;
     }
 }
 
@@ -98,12 +101,13 @@ void *lkby_start_transmitter(void *none  __attribute__((unused)))
                 if (!is_user_active(LKBY_INFO_KEYBOARD_USER_ID(&current_user))) continue;
                 add_user(LKBY_INFO_KEYBOARD_USER_ID(&current_user));
             }
-            // After that, notify the server, that the clients has been consumed.
-            (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
+            // // After that, notify the server, that the clients has been consumed.
+            // (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
         }
 
         while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_transmit_queue))) {
             lkbyqueue_dequeue(&trasmit_data, &LKBYQUEUE(&g_transmit_queue));
+            printf("%d\n", LKBY_INFO_KEYBOARD_CODE(&trasmit_data));
             send_data_to_users(&trasmit_data);
         }
     }

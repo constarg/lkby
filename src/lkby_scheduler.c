@@ -218,8 +218,10 @@ static void *keyboard_routine(void *src)
             LKBY_INFO_KEYBOARD_CODE(&transmit_info)                 = kb_event_buffer.code;
             LKBY_INFO_KEYBOARD_STATUS(&transmit_info)               = kb_event_buffer.value;
 
-            // TODO - try wait and if there is an actaul reason to wait, check if the queue is empty, then if it is not, wait.
-            //if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
+            if (true != lkbyqueue_isempty(&LKBYQUEUE(&g_transmit_queue))) {
+                if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto keyboard_routine_failed_label;
+            }
+
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
             // inform the transmitter thread that there is a new event.
             (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
