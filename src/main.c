@@ -78,7 +78,7 @@ int main(void)
         (void)strcpy(server_addr.sun_path, SERVER_SOCK_PATH);
         len = sizeof(server_addr);
 
-        // Remove the sock file, if previously existed.
+        // Remove the sock file, if prceviously existed.
         (void)unlink(SERVER_SOCK_PATH);
         // Change the default permissions of the file system for a bit.
         old_mode = umask(SOCKET_UMASK_MODE);
