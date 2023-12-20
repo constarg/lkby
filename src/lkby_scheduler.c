@@ -205,7 +205,6 @@ static void *keyboard_routine(void *src)
     // Open the eventX file of the keyboard.
     event_fd = open(absolute_path_to_event, O_RDONLY);
     if (-1 == event_fd) goto keyboard_routine_failed_label;
-    printf("%s\n", absolute_path_to_event);
 
     // Start monitor the keyboard.
     while (true) {
@@ -223,7 +222,7 @@ static void *keyboard_routine(void *src)
             //if (0 != sem_wait(&LKBYQUEUE_SEM(&g_transmit_queue))) goto failed_label;
             lkbyqueue_enqueue(&LKBYQUEUE(&g_transmit_queue), &transmit_info);
             // inform the transmitter thread that there is a new event.
-            //(void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
+            (void)sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
         }
     }
 
@@ -255,8 +254,8 @@ void *lkby_start_scheduler(void *none __attribute__((unused)))
     union lkby_info *kb     = NULL; // The current keyboard
     struct active_kb *ac_kb = NULL; // Label the current keyboard as active. 
 
-    //while (true) {
-        if (0 != sem_wait(&LKBYQUEUE_SEM(&g_keyboard_queue))) return NULL; // TODO - change return to continue;
+    while (true) {
+        if (0 != sem_wait(&LKBYQUEUE_SEM(&g_keyboard_queue))) continue;
         clean_threads();
 
         while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_keyboard_queue))) {
@@ -289,7 +288,7 @@ lkby_scheduler_failed_label:
             free(kb);
             free(ac_kb);
         }
-    //}    
+    }    
 
     pthread_cleanup_pop(1);
     return NULL;

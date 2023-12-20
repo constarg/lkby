@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
@@ -12,6 +13,8 @@
 #include "lkby.h"
 
 #define SERVER_SOCK_PATH "/tmp/unix_lkby_sock.server"
+
+#define SOCKET_UMASK_MODE 0171 
 
 #define RETRY 5 // Seconds.
 
@@ -29,6 +32,8 @@ int main(void)
     union lkby_info client_info;
     lkby_init(&client_info);
 
+
+    mode_t old_mode; // Old permissions.
     /**
      * Service related variables.
     */
@@ -48,11 +53,10 @@ int main(void)
     // Check if there is an already active thread that discover keyboards.
     if (0 != pthread_create(&discov_th,   NULL, &lkby_start_discovery,   NULL)) return -1;
     if (0 != pthread_create(&sched_th,    NULL, &lkby_start_scheduler,   NULL)) return -1;
-    if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
 
     // Detach each thread from the main thread.
-    //pthread_detach(discov_th);
-    //pthread_detach(sched_th);
+    pthread_detach(discov_th);
+    pthread_detach(sched_th);
 
     // pthread_join(discov_th, NULL);
     // pthread_join(sched_th, NULL);
@@ -65,7 +69,7 @@ int main(void)
         // Get the file descriptor for the server.
         server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (-1 == server_fd) {
-            sleep(RETRY);
+            (void)sleep(RETRY);
             continue;
         }
 
@@ -75,13 +79,20 @@ int main(void)
         len = sizeof(server_addr);
 
         // Remove the sock file, if previously existed.
-        unlink(SERVER_SOCK_PATH);
+        (void)unlink(SERVER_SOCK_PATH);
+        // Change the default permissions of the file system for a bit.
+        old_mode = umask(SOCKET_UMASK_MODE);
         // Bind the sock addr with the specific file descriptor of the socket.
         if (-1 == bind(server_fd, (struct sockaddr *) &server_addr, len)) {
-            close(server_fd);
-            sleep(RETRY);
+            (void)close(server_fd);
+            (void)sleep(RETRY);
             continue;
         }
+        // Restore permissions.
+        (void)umask(old_mode);
+
+        if (0 != pthread_create(&transmit_th, NULL, &lkby_start_transmitter, NULL)) return -1;
+        pthread_detach(transmit_th);
 
         // Repeat the code below for ever.
         while (1) {
@@ -112,7 +123,7 @@ lkby_failed_to_establish_conn_label:
             ++conn_errors;
 
         }
-        close(server_fd);
+        (void)close(server_fd);
         conn_errors = 0; // Reset occured errors.
     }
 
