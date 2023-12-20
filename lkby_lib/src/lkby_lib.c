@@ -5,71 +5,82 @@
 #include <sys/un.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
+#include <malloc.h>
+#include <string.h>
 
 #include "lkby_lib.h"
 #include "lkby.h"
 
 #define SERVER_SOCK_PATH "/tmp/unix_lkby_sock.server"
-#define CLIENT_SOCK_PATH "/tmp/unix_lkby_sock.client"
+#define SOCK_PATH "/tmp/"
+#define CLIENT_SOCK_ENDING ".client"
 
+static int g_client_fd;
 
-int establish_connection(void (*keystroke_callback)(const lkby_info *restrict src))
+static void lkby_lib_signal_handler(int sig __attribute__((unused)))
 {
+    (void)close(g_client_fd);
+    exit(0);
+}
+
+int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *))
+{
+    signal(SIGHUP,  lkby_lib_signal_handler);
+    signal(SIGINT,  lkby_lib_signal_handler);
+    signal(SIGQUIT, lkby_lib_signal_handler);
+
     struct sockaddr_un server_addr; 
     struct sockaddr_un client_addr;
 
-    int client_fd; // Client's socket file descriptor.
+    char *client_sock_path;
     socklen_t len;
 
     (void)memset(&server_addr, 0, sizeof(struct sockaddr_un));
     (void)memset(&client_addr, 0, sizeof(struct sockaddr_un));
 
-    client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (-1 == client_fd) return -1;
+    g_client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (-1 == g_client_fd) return -1;
+
+    // Create the UNIX socket file, based on the given name.
+    client_sock_path = (char *) malloc(sizeof(char) * strlen(name)               +
+                                                      strlen(SOCK_PATH)          + 
+                                                      strlen(CLIENT_SOCK_ENDING) + 1);
+    if (NULL == client_sock_path) goto lkby_lib_establish_error_label;
+
+    strcpy(client_sock_path, SOCK_PATH);
+    strcat(client_sock_path, name);
+    strcat(client_sock_path, CLIENT_SOCK_ENDING);
 
     client_addr.sun_family = AF_UNIX;
-    (void)strcpy(client_addr.sun_path, CLIENT_SOCK_PATH);
-    (void)unlink(CLIENT_SOCK_PATH);
+    (void)strcpy(client_addr.sun_path, client_sock_path);
+    (void)unlink(client_sock_path);
     len = sizeof(client_addr);
 
-    if (-1 == bind(client_fd, (struct sockaddr *) &client_addr, len)) goto lkby_lib_establish_error_label;
+    if (-1 == bind(g_client_fd, (struct sockaddr *) &client_addr, len)) goto lkby_lib_establish_error_label;
 
     server_addr.sun_family = AF_UNIX;
     (void)strcpy(server_addr.sun_path, SERVER_SOCK_PATH);
 
-    if (-1 == connect(client_fd, (struct sockaddr *) &server_addr, len)) goto lkby_lib_establish_error_label;
+    if (-1 == connect(g_client_fd, (struct sockaddr *) &server_addr, len)) goto lkby_lib_establish_error_label;
 
     union lkby_info buff; // The buffer of the connection.
     lkby_init(&buff);
-
+    
+    free(client_sock_path);
+    client_sock_path = NULL;
     // From now on, the client is connected to the server. Now wait for any keystroke.
     while (true) {
-        //lkby_init(&buff);
-        if (-1 == recv(client_fd, &buff, sizeof(union lkby_info), 0)) goto lkby_lib_establish_error_label;
+        lkby_init(&buff);
+        if (-1 == recv(g_client_fd, &buff, sizeof(union lkby_info), 0)) goto lkby_lib_establish_error_label;
         // Call the callback function for the current keystroke.
-        keystroke_callback(&buff);        
+        lkby_lib_callback(&buff);        
     }
-    (void)unlink(CLIENT_SOCK_PATH);
-    (void)close(client_fd);
+    (void)close(g_client_fd);
 
     return 0;
 
 lkby_lib_establish_error_label:
-    (void)unlink(CLIENT_SOCK_PATH);
-    (void)close(client_fd);
+    (void)close(g_client_fd);
     return -1;
-}
-
-
-// Remove this.
-void test(const lkby_info *restrict src) 
-{
-    printf("Code: %d\n", LKBY_INFO_KEYBOARD_CODE(src));
-}
-
-
-int main(void)
-{
-    establish_connection(&test);
-    return 0;
 }

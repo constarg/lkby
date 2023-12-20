@@ -7,10 +7,12 @@ c_debug_flags = -g -Wall -Wpedantic -Wnull-dereference -Wextra -Wunreachable-cod
 c_features = -D _GNU_SOURCE
 
 all: dir_make
-	${GCC} ${c_features} ${header_loc} ./src/lkby_lib.c -o ./bin/lkby_lib
+	${GCC} -c ${c_features} ${header_loc} ./src/lkby_lib.c -o ./bin/lib_lkby.o
+	ar rcs ./lib/lib_lkby.a ./bin/lib_lkby.o 
 
 dir_make:
 	mkdir -p ./bin/
+	mkdir -p ./lib/
 
 clean:
 	rm -rf ./build/

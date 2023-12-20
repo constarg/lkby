@@ -86,7 +86,7 @@ typedef union lkby_info lkby_info;
  * @return Nothing on success, cause it put the thread to sleep status (until a new keystroke arrive). 
  * In case an error occured, -1 is returned.
 */
-extern int lkby_lib_establish_connection(void (*lkby_lib_callback)(lkby_info *));
+extern int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *));
 
 
 #endif

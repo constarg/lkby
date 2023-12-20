@@ -58,9 +58,6 @@ int main(void)
     pthread_detach(discov_th);
     pthread_detach(sched_th);
 
-    // pthread_join(discov_th, NULL);
-    // pthread_join(sched_th, NULL);
-
     // If any step excpet the listening/accept part failed, retry after 5 seconds again.
     while (1) {
         // initialize the sockaddr
@@ -121,9 +118,9 @@ int main(void)
 lkby_failed_to_establish_conn_label:
             (void)close(client_fd);
             ++conn_errors;
-
         }
         (void)close(server_fd);
+        (void)pthread_cancel(transmit_th);
         conn_errors = 0; // Reset occured errors.
     }
 
