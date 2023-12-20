@@ -21,7 +21,6 @@ Now, let's build the program:
 ```
 mkdir build
 cd build/
-cmake ../
 make
 ```
 
