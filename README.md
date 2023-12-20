@@ -28,7 +28,7 @@ make
 After this the program will be ready to run.
 
 # Doc
-The documentation for the library is accessible in the **"doc"** folder as well as on the wiki page of this repository.
+The documentation for the library is accessible in the **"docs"** folder as well as on the wiki page of this repository.
 
 # Test
 An illustrative instance of employing this library is available in the **test** folder.
