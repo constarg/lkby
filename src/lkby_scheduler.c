@@ -84,7 +84,7 @@ static inline int add_active_kb(const struct active_kb *src)
  * @param src The keyboard to remove.
  * @return 0 on success, otherwise -1.
  **/
-static int remove_active_kb(struct active_kb *restrict src)
+static int remove_active_kb(struct active_kb *src)
 {
     int index = -1;
     for (size_t i = 0; i < g_active_next; i++) {
@@ -106,6 +106,7 @@ static int remove_active_kb(struct active_kb *restrict src)
     lkby_keyboard_free(&LKBYACTIVE_KB(src));
     // free the previous allocated active_keyboard.
     free(src);
+    src = NULL;
     --g_active_next;
 
     if (g_s_active_kbs - g_active_next > 10) {
@@ -230,6 +231,7 @@ static void *keyboard_routine(void *src)
 
 keyboard_routine_failed_label:
     free(absolute_path_to_event);
+    absolute_path_to_event = NULL;
     (void)close(event_fd);
     pthread_cleanup_pop(1);
     return NULL;
@@ -285,7 +287,6 @@ void *lkby_start_scheduler(void *none __attribute__((unused)))
             (void)pthread_detach(ac_kb->kb_thread);
 
             continue; // ! DO NOT GO TO THE ARREA OF ERRORS. (label below).
-            // TODO - this error handling need more tests.
 lkby_scheduler_failed_label:
             free(kb);
             free(ac_kb);

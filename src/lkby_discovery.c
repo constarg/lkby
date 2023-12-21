@@ -146,13 +146,15 @@ static void read_keyboards(FILE *devices)
             if (NULL == (kb_name = retrieve_keyboard_name(dev))) {
                 free(kb_event);
                 free(dev);
-                dev = NULL;
+                dev      = NULL;
+                kb_event = NULL;
                 continue;
             }
             store_kb_to_transmit_queue((const char *) kb_event, 
                                        (const char *) kb_name);
         }
         free(dev);
+        dev = NULL;
     }
     // inform the scheduler thread that there are keyboards in the queue.
     (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
