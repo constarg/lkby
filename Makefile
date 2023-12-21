@@ -14,6 +14,9 @@ all: dir_make ${object_files}
 	${GCC} ${c_features} ${c_production_flags} ${header_loc} ./src/main.c ${object_files} ${libraries} -o ./bin/lkby
 	cd ./lkby_lib/ && ${MAKE}
 
+install:
+	sudo cp ./bin/lkby /sbin/
+
 debug: dir_make ${object_files_debug}
 	${GCC} ${c_features} ${c_debug_flags} ${header_loc} ./src/main.c ${object_files_debug} ${libraries} -o ./bin/lkby_debug
 	cd ./lkby_lib/ && ${MAKE}
