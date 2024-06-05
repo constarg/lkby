@@ -46,7 +46,7 @@ Macros in C prove to be incredibly useful! That's why the Lkby library provides
 a set of very handy macros, outlined above.
 
 ```C
-define LKBY_LIB_KEYBOARD_NAME(lkby_info)
+#define LKBY_LIB_KEYBOARD_NAME(lkby_info)
 ```
 **LKBY_LIB_KEYBOARD_NAME** macro function takes the lkby_info structure as an argument and translates 
 it into a member of the lkby_info structure that corresponds to the name of 
