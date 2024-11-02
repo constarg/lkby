@@ -112,10 +112,10 @@ int main(void)
             // Listen for a new connection.
             // If 3 consecutive errors have been occurred, then reactivate the whole server.
             if (3 == conn_errors) break; // If more than one error has occurred, then reset the whole server
-            printf("%s: Listening...\n", get_current_time());
+            printf("[%s] -> Listening...\n", get_current_time());
             if (-1 == listen(server_fd, MAX_CONNECTIONS)) goto lkby_failed_to_establish_conn_label;
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &len);
-            printf("%s: Client connected\n", get_current_time());
+            printf("[%s] -> Client connected\n", get_current_time());
 
             len = sizeof(client_addr);
             if (-1 == client_fd) goto lkby_failed_to_establish_conn_label;

@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <malloc.h>
 #include <string.h>
+#include <poll.h>
 
 #include "lkby_lib.h"
 #include "lkby.h"
@@ -24,7 +25,8 @@ static void lkby_lib_signal_handler(int sig __attribute__((unused)))
     exit(0);
 }
 
-int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *))
+enum lkby_conn_error_code lkby_lib_establish_connection
+(const char *restrict name, void (*lkby_lib_callback)(lkby_info *))
 {
     signal(SIGHUP, lkby_lib_signal_handler);
     signal(SIGINT, lkby_lib_signal_handler);
@@ -36,17 +38,29 @@ int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_cal
     char *client_sock_path;
     socklen_t len;
 
+    // poll related.
+    nfds_t nfds = 1;
+    struct pollfd fds[1];
+
+    enum lkby_conn_error_code ret_code;
+
     (void) memset(&server_addr, 0, sizeof(struct sockaddr_un));
     (void) memset(&client_addr, 0, sizeof(struct sockaddr_un));
 
     g_client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (-1 == g_client_fd) return -1;
+    if (-1 == g_client_fd) return INTERNAL_FAILURE;
+
+    fds[0].fd     = g_client_fd;
+    fds[0].events = POLLRDHUP;
 
     // Create the UNIX socket file, based on the given name.
     client_sock_path = (char *) malloc(sizeof(char) * strlen(name) +
                                        strlen(SOCK_PATH) +
                                        strlen(CLIENT_SOCK_ENDING) + 1);
-    if (NULL == client_sock_path) goto lkby_lib_establish_error_label;
+    if (NULL == client_sock_path) {
+        ret_code = INTERNAL_FAILURE;
+        goto lkby_lib_establish_error_label;
+    }
 
     strcpy(client_sock_path, SOCK_PATH);
     strcat(client_sock_path, name);
@@ -57,13 +71,18 @@ int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_cal
     (void) unlink(client_sock_path);
     len = sizeof(client_addr);
 
-    if (-1 == bind(g_client_fd, (struct sockaddr *) &client_addr, len)) goto lkby_lib_establish_error_label;
+    if (-1 == bind(g_client_fd, (struct sockaddr *) &client_addr, len)) {
+        ret_code = INTERNAL_FAILURE;
+        goto lkby_lib_establish_error_label;
+    }
 
     server_addr.sun_family = AF_UNIX;
     (void) strcpy(server_addr.sun_path, SERVER_SOCK_PATH);
 
-    if (-1 == connect(g_client_fd, (struct sockaddr *) &server_addr, len)) goto lkby_lib_establish_error_label;
-
+    if (-1 == connect(g_client_fd, (struct sockaddr *) &server_addr, len)) {
+        ret_code = FAILED_CONNECT;
+        goto lkby_lib_establish_error_label;
+    }
     union lkby_info buff; // The buffer of the connection.
     lkby_init(&buff);
 
@@ -72,15 +91,23 @@ int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_cal
     // From now on, the client is connected to the server. Now wait for any keystroke.
     while (true) {
         lkby_init(&buff);
+
+        if (-1 == poll(fds, nfds, 0)) {
+            ret_code = INTERNAL_FAILURE;
+            goto lkby_lib_establish_error_label;
+        }
+
+        if (fds[0].revents & POLLRDHUP) {
+            ret_code = CONNECTION_LOST;
+            goto lkby_lib_establish_error_label;
+        }
+
         if (-1 == recv(g_client_fd, &buff, sizeof(union lkby_info), 0)) goto lkby_lib_establish_error_label;
         // Call the callback function for the current keystroke.
         lkby_lib_callback(&buff);
     }
-    (void) close(g_client_fd);
-
-    return 0;
 
 lkby_lib_establish_error_label:
     (void) close(g_client_fd);
-    return -1;
+    return ret_code;
 }

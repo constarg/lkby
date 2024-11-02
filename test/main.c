@@ -13,11 +13,17 @@ void keystroke_handler(lkby_info *restrict src)
 
 int main(void)
 {
-    (void)printf("Trying to connect to lkby server...\n");
-    int err = lkby_lib_establish_connection("TESTING", keystroke_handler);
+    (void) printf("Trying to connect to lkby server...\n");
 
-    if (-1 == err) {
-        (void)printf("Failed to connect to lkby server.\n");
+    enum lkby_conn_error_code ret_code;
+    ret_code = lkby_lib_establish_connection("TESTING", keystroke_handler);
+
+    if (ret_code == FAILED_CONNECT) {
+        (void) printf("Failed to connect to lkby server.\n");
+    } else if (ret_code == CONNECTION_LOST) {
+        (void) printf("Connection closed by peer.\n");
+    } else {
+        (void) printf("Invernal error.\n");
     }
     return 0;
 }
