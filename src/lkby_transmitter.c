@@ -110,5 +110,6 @@ void *lkby_start_transmitter(void *none __attribute__((unused)))
             lkbyqueue_dequeue(&trasmit_data, &LKBYQUEUE(&g_transmit_queue));
             send_data_to_users(&trasmit_data);
         }
+	(void) sem_post(&LKBYQUEUE_SEM(&g_transmit_queue));
     }
 }
