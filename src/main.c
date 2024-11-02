@@ -5,6 +5,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <time.h>
 
 #include "lkby_scheduler.h"
 #include "lkby_discovery.h"
@@ -22,6 +24,20 @@
 struct lkbyqueue_sync g_keyboard_queue; // The queue used to schedule data.
 struct lkbyqueue_sync g_transmit_queue; // The queue used to transmit data.
 struct lkbyqueue_sync g_user_queue;     // The queue used to inform tansmitter for new users.
+
+static char *get_current_time(void)
+{
+    time_t rawtime;
+    (void) time(&rawtime);
+    const struct tm *timeinfo = localtime(&rawtime);
+    char *time_str = asctime(timeinfo);
+    char *time_str_dup = strdup(time_str);
+
+    size_t time_str_s = strlen(time_str);
+    (void) memcpy(time_str, time_str_dup, time_str_s - 2);
+    time_str[time_str_s - 1] = '\0';
+    return time_str;
+}
 
 int main(void)
 {
@@ -94,11 +110,14 @@ int main(void)
         // Repeat the code below for ever.
         while (1) {
             // Listen for a new connection.
-            // If 3 consecutives errors have been occured, then reactivate the whole server.
-            if (3 == conn_errors) break; // If more than one error has occured, then reset the whole server.
+            // If 3 consecutive errors have been occurred, then reactivate the whole server.
+            if (3 == conn_errors) break; // If more than one error has occurred, then reset the whole server
+            printf("%s: Listening...\n", get_current_time());
             if (-1 == listen(server_fd, MAX_CONNECTIONS)) goto lkby_failed_to_establish_conn_label;
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &len);
-            len       = sizeof(client_addr);
+            printf("%s: Client connected\n", get_current_time());
+
+            len = sizeof(client_addr);
             if (-1 == client_fd) goto lkby_failed_to_establish_conn_label;
             if (-1 == getpeername(client_fd, (struct sockaddr *) &client_addr, &len)) goto
                     lkby_failed_to_establish_conn_label;
