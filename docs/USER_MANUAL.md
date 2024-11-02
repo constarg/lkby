@@ -36,10 +36,19 @@ it is released, pressed, or in autorepeat.
 The library also supplies a single function that manages all aspects related to 
 connection and keystroke handling. The function signature is given below:
 ```c
-int lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *))
+enum lkby_conn_error_code lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *))
 ```
 This function's role is to attempt to establish a connection to the Lkby server. Additionally, it 
 calls the callback function lkby_lib_callback for every keystroke received from the Lkby server to the client.
+## Enums 
+The library includes a single enum that encapsulates all errors associated with established or failed connections. The enum is detailed below, and if any error occurs in the function lkby_lib_establish_connection, it will return the corresponding error that caused the function to fail.
+```c
+enum lkby_conn_error_code {
+  FAILED_CONNECT  = -1,
+  CONNECTION_LOST = -2,
+  INTERNAL_FAILURE = -3
+};
+```
 
 ## Macros
 Macros in C prove to be incredibly useful! That's why the Lkby library provides
