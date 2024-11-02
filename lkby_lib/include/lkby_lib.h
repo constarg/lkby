@@ -40,48 +40,49 @@ typedef union lkby_info lkby_info;
 /**
  * The value of the keyboard status if the key is pressed.
 */
-#define LKBY_LIB_KEY_RELEASED   0x0
+#define LKBY_LIB_KEY_RELEASED   (0x0)
 /**
  * The value of the keyboard status if the key is released.
 */
-#define LKBY_LIB_KEY_PRESSED    0x1
+#define LKBY_LIB_KEY_PRESSED    (0x1)
 /**
  * The value of the keybarod status if the key is autorepeat.
 */
-#define LKBY_LIB_KEY_AUTOREPEAT 0x2
+#define LKBY_LIB_KEY_AUTOREPEAT (0x2)
 
 /**
  * A generic way to express the 3 next macros.
 */
 #define LKBY_LIB_CHECK_KEYBOARD_STATUS_FOR(lkby_info, value) \
-    (LKBY_INFO_KEYBOARD_STATUS == value)? true:false
+    ((LKBY_INFO_KEYBOARD_STATUS == value)? true:false)
 
 /**
  * Check the current value of the keyboard status to determine
  * if it was key press.
 */
 #define LKBY_LIB_IS_KEY_PRESSED(lkby_info) \
-    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_PRESSED)
+    (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_PRESSED))
 
 /**
  * Check the current value of the keyboard status to determine
  * if it was key release.
 */
 #define LKBY_LIB_IS_KEY_RELEASE(lkby_info) \
-    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_RELEASED)
+    (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_RELEASED))
 
 /**
  * Check the current value of the keybaord status to determine
  * if it was key autorepeat.
 */
 #define LKBY_LIB_IS_KEY_AUTOREPEAT(lkby_info) \
-    LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_AUTOREPEAT)
+    (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_AUTOREPEAT))
 
 /**
  * This function establish a new connection to the lkby server. Also,
  * calls the routine, keystroke_callback, for every keystroke the server
- * sents.
+ * sends.
  * 
+ * @param name A string representing the name of the UNIX socket for the client.
  * @param lkby_lib_callback The routine to call when lkby server sent a new keystroke.
  * @return Nothing on success, cause it put the thread to sleep status (until a new keystroke arrive). 
  * In case an error occured, -1 is returned.

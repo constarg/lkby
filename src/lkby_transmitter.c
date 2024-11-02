@@ -13,14 +13,14 @@ static lkby_user_id active_users[MAX_CONNECTIONS]; // The currently active users
 
 static inline void active_users_init(void)
 {
-    (void)memset(active_users, -1, sizeof(lkby_user_id) * MAX_CONNECTIONS);
+    (void) memset(active_users, -1, sizeof(lkby_user_id) * MAX_CONNECTIONS);
 }
 
 /**
  * This function adds a new user to the list 
  * of active users.
 */
-static inline void add_user(lkby_user_id src) 
+static inline void add_user(lkby_user_id src)
 {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (active_users[i] == -1) {
@@ -34,9 +34,9 @@ static inline void add_user(lkby_user_id src)
  * This function removes a user from the list
  * of active users.
 */
-static inline void remove_user(lkby_user_id src) 
+static inline void remove_user(lkby_user_id src)
 {
-    (void)close(src);
+    (void) close(src);
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (active_users[i] == src) {
             active_users[i] = -1;
@@ -49,7 +49,7 @@ static inline void remove_user(lkby_user_id src)
  * This function checks whether a user is active by sending a test
  * message, 1 bytes, and verify that the connection is still established.
 */
-static inline bool is_user_active(lkby_user_id src) 
+static inline bool is_user_active(lkby_user_id src)
 {
     union lkby_info tmp_buff;
     lkby_init(&tmp_buff);
@@ -75,7 +75,7 @@ static inline void remove_inactive_users(void)
 /**
  * This function sends the data to the active users.
 */
-static inline void send_data_to_users(const union lkby_info *src) 
+static inline void send_data_to_users(const union lkby_info *src)
 {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         if (-1 == active_users[i]) continue;
@@ -83,7 +83,7 @@ static inline void send_data_to_users(const union lkby_info *src)
     }
 }
 
-void *lkby_start_transmitter(void *none  __attribute__((unused)))
+void *lkby_start_transmitter(void *none __attribute__((unused)))
 {
     union lkby_info trasmit_data;
     union lkby_info current_user;
@@ -103,7 +103,7 @@ void *lkby_start_transmitter(void *none  __attribute__((unused)))
                 add_user(LKBY_INFO_KEYBOARD_USER_ID(&current_user));
             }
             // After that, notify the server, that the clients has been consumed.
-            (void)sem_post(&LKBYQUEUE_SEM(&g_user_queue));
+            (void) sem_post(&LKBYQUEUE_SEM(&g_user_queue));
         }
 
         while (true != lkbyqueue_isempty(&LKBYQUEUE(&g_transmit_queue))) {

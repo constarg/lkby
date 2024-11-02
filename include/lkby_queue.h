@@ -26,13 +26,13 @@
 #define LKBYQUEUE_SEM(sync) \
     (sync)->s_sem
 
-struct lkbyqueue_node 
+struct lkbyqueue_node
 {
     union lkby_info data;
     struct lkbyqueue_node *next;
 };
 
-struct lkbyqueue 
+struct lkbyqueue
 {
     struct lkbyqueue_node *front;
     struct lkbyqueue_node *rear;
@@ -43,15 +43,15 @@ struct lkbyqueue
  * in order to synchronize the threads
  * whitch is using queues.
  */
-struct lkbyqueue_sync 
+struct lkbyqueue_sync
 {
     struct lkbyqueue s_queue; // The queue that need synchronization.
     sem_t s_sem;              // The semaphore that synchronize the queue.
 };
 
-static inline void lkbyqueue_init(struct lkbyqueue *queue) 
+static inline void lkbyqueue_init(struct lkbyqueue *queue)
 {
-    (void)memset(queue, 0x0, sizeof(struct lkbyqueue));
+    (void) memset(queue, 0x0, sizeof(struct lkbyqueue));
 }
 
 static inline int lkbyqueue_sync_init(struct lkbyqueue_sync *s_queue)
@@ -75,7 +75,7 @@ void lkbyqueue_dequeue(union lkby_info *restrict dst, struct lkbyqueue *restrict
  * @param queue The queue to check.
  * @returns True if the queue is empty, otherwise false.
 */
-bool lkbyqueue_isempty(const struct lkbyqueue *queue); 
+bool lkbyqueue_isempty(const struct lkbyqueue *queue);
 
 /**
  * This functiono add an element into the queue. After the call of this

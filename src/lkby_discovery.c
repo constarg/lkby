@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
-#include <semaphore.h> 
+#include <semaphore.h>
 #include <unistd.h>
 #include <string.h>
 #include <malloc.h>
@@ -21,13 +21,13 @@
     ((!strcmp(dev_id, KEYBOARD_ID1) || !strcmp(dev_id, KEYBOARD_ID2)) ||  !strcmp(dev_id, KEYBOARD_ID3))
 
 
-static char *read_device(FILE *devices) 
+static char *read_device(FILE *devices)
 {
     size_t init_size = 50;
-    char *device = (char *) malloc(sizeof(char) * init_size);
+    char *device     = (char *) malloc(sizeof(char) * init_size);
     if (NULL == device) return NULL;
 
-    char curr_ch = ' ';
+    char curr_ch     = ' ';
     size_t curr_size = 0;
     while (1) {
         curr_ch = fgetc(devices);
@@ -59,7 +59,7 @@ static char *read_device(FILE *devices)
  * @param device The device to check.
  * @returns a pointer to the eventX file if the device is keyboard or NULL otherwise.
  */
-static char *identified_keyboard(const char *restrict device) 
+static char *identified_keyboard(const char *restrict device)
 {
     char *ev_loc = strstr(device, "EV=");
     if (NULL == ev_loc) return NULL;
@@ -75,7 +75,7 @@ static char *identified_keyboard(const char *restrict device)
 
     ev = (char *) malloc(sizeof(char) * (len + 1));
     if (NULL == ev) return NULL;
-    (void)memcpy(ev, ev_loc, len);
+    (void) memcpy(ev, ev_loc, len);
     ev[len - 1] = '\0';
 
     if (IS_KEYBOARD(ev)) {
@@ -89,29 +89,29 @@ static char *identified_keyboard(const char *restrict device)
         while (*(ev_loc + len++) != '\n');
         ev = (char *) malloc(sizeof(char) * (len - 1));
         if (NULL == ev) return NULL;
-        (void)memset(ev, 0x0, len - 1);
-        (void)memcpy(ev, ev_loc, len - 2);
+        (void) memset(ev, 0x0, len - 1);
+        (void) memcpy(ev, ev_loc, len - 2);
         return ev;
     }
 
     free(ev);
     return NULL;
 }
- 
-static char *retrieve_keyboard_name(const char *device) 
+
+static char *retrieve_keyboard_name(const char *device)
 {
     char *name_loc = strstr(device, "Name=");
     if (NULL == name_loc) return NULL;
     char *name = NULL;
-    int len = 0;
+    int len    = 0;
 
     // skip name and the first "
     name_loc += 6;
     while (*(name_loc + len++) != '\n');
     name = (char *) malloc(sizeof(char) * (len - 1));
     if (NULL == name) return NULL;
-    (void)memset(name, 0x0, len - 1);
-    (void)memcpy(name, name_loc, len - 2); // skip the last "
+    (void) memset(name, 0x0, len - 1);
+    (void) memcpy(name, name_loc, len - 2); // skip the last "
 
     return name;
 }
@@ -121,7 +121,7 @@ static char *retrieve_keyboard_name(const char *device)
  * discovered keyboard into the queue of the scheduler
  * thread.
  */
-static inline void store_kb_to_transmit_queue(const char *restrict kb_event, const char *restrict kb_name) 
+static inline void store_kb_to_transmit_queue(const char *restrict kb_event, const char *restrict kb_name)
 {
     // build the data.
     union lkby_info kb_scheduling_info;
@@ -129,7 +129,7 @@ static inline void store_kb_to_transmit_queue(const char *restrict kb_event, con
 
     // store the information needed to schedule the keyboard.
     LKBY_INFO_KEYBOARD_NAME(&kb_scheduling_info, lkby_keyboard) = (char *) kb_name;
-    LKBY_INFO_KEYBOARD_EVENT(&kb_scheduling_info)               = (char *) kb_event; 
+    LKBY_INFO_KEYBOARD_EVENT(&kb_scheduling_info)               = (char *) kb_event;
 
     // add the new schedule info into the queue.
     lkbyqueue_enqueue(&LKBYQUEUE(&g_keyboard_queue), &kb_scheduling_info);
@@ -150,14 +150,14 @@ static void read_keyboards(FILE *devices)
                 kb_event = NULL;
                 continue;
             }
-            store_kb_to_transmit_queue((const char *) kb_event, 
+            store_kb_to_transmit_queue((const char *) kb_event,
                                        (const char *) kb_name);
         }
         free(dev);
         dev = NULL;
     }
     // inform the scheduler thread that there are keyboards in the queue.
-    (void)sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
+    (void) sem_post(&LKBYQUEUE_SEM(&g_keyboard_queue));
 }
 
 void *lkby_start_discovery(void *none __attribute__((unused)))
@@ -165,15 +165,15 @@ void *lkby_start_discovery(void *none __attribute__((unused)))
     FILE *devices; // pointer to the device file. 
 
     // start the keyboard identification process
-    while(1) {
+    while (1) {
         devices = fopen(KB_DEVICES_LOC, "r");
         if (NULL == devices) {
-            (void)sleep(RETRY);
+            (void) sleep(RETRY);
             continue;
         }
         read_keyboards(devices);
-        (void)fclose(devices);
-        (void)sleep(REDISCOVER);
+        (void) fclose(devices);
+        (void) sleep(REDISCOVER);
     }
 
     return NULL;
