@@ -51,28 +51,25 @@ typedef union lkby_info lkby_info;
 #define LKBY_LIB_KEY_AUTOREPEAT (0x2)
 
 /**
- * A generic way to express the 3 next macros.
+ * A generic way to express the three macros above.
 */
 #define LKBY_LIB_CHECK_KEYBOARD_STATUS_FOR(lkby_info, value) \
     ((LKBY_INFO_KEYBOARD_STATUS == value)? true:false)
 
 /**
- * Check the current value of the keyboard status to determine
- * if it was key press.
+ * Check the current value of the keyboard status to determine if a key press occurred.
 */
 #define LKBY_LIB_IS_KEY_PRESSED(lkby_info) \
     (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_PRESSED))
 
 /**
- * Check the current value of the keyboard status to determine
- * if it was key release.
+ * Check the current value of the keyboard status to determine if a key release occurred.
 */
 #define LKBY_LIB_IS_KEY_RELEASE(lkby_info) \
     (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_RELEASED))
 
 /**
- * Check the current value of the keybaord status to determine
- * if it was key autorepeat.
+ * Check the current value of the keyboard status to determine if key autorepeat is enabled.
 */
 #define LKBY_LIB_IS_KEY_AUTOREPEAT(lkby_info) \
     (LKBY_CHECK_KEYBOARD_STATUS_FOR(lkby_info, LKBY_KEY_AUTOREPEAT))
@@ -87,15 +84,13 @@ enum lkby_conn_error_code {
 };
 
 /**
- * This function establish a new connection to the lkby server. Also,
- * calls the routine, keystroke_callback, for every keystroke the server
- * sends.
- * 
- * @param name A string representing the name of the UNIX socket for the client.
- * @param lkby_lib_callback The routine to call when lkby server sent a new keystroke.
- * @return Nothing on success, cause it put the thread to sleep status (until a new keystroke arrive). 
- * In case an error occured, one of the errors listed in `enum lkby_conn_error_code` will be the
- * respective return value.
+  * This function establishes a new connection to the lkby server and calls the
+  * keystroke_callback routine for each keystroke received from the server.
+  *
+  * @param name A string that specifies the name of the UNIX socket for the client.
+  * @param lkby_lib_callback The routine to invoke when the lkby server sends a new keystroke.
+  * @return On success, the function does not return a value and puts the thread into a sleep state until a new keystroke arrives.
+  * If an error occurs, it returns one of the error codes defined in enum lkby_conn_error_code.
 */
 extern enum lkby_conn_error_code lkby_lib_establish_connection(const char *restrict name, void (*lkby_lib_callback)(lkby_info *));
 
